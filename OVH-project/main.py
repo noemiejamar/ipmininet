@@ -3,14 +3,14 @@
 from ipmininet.ipnet import IPNet
 from ipmininet.cli import IPCLI
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, ebgp_session, SHARE
+from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, ebgp_session, SHARE,iBGPFullMesh, AS, bgp_peering
 import ipmininet
 
 
 class SimpleBGPTopo(IPTopo):
 
     def build(self, *args, **kwargs):
-       # family = AF_INET6()
+        family = AF_INET6()
        # lan_as1_h1 = 'cafe:babe:dead:beaf::/64'
        # lan_as2_h2 = 'c1a4:4ad:c0ff:ee::/64'
 
@@ -21,14 +21,8 @@ class SimpleBGPTopo(IPTopo):
 
 
         # Add all routers
-
-        
-        
-        
         as1_bb1= self.addRouter("as1_bb1", config=RouterConfig) #sydsy2bb1a72
         as1_bb2= self.addRouter("as1_bb2", config=RouterConfig) #sydsy2bb2a72
-        #as1_r1= self.addRouter("as1_r1", config=RouterConfig) #sydsy2bb1a9
-        #as1_r2= self.addRouter("as1_r2", config=RouterConfig) #sydsy2bb2a9
         as1_r3= self.addRouter("as1_r3", config=RouterConfig)#syd1sy2g1nc5
         as1_r4= self.addRouter("as1_r4", config=RouterConfig)#syd1sy2g2nc5
         as1_r5= self.addRouter("as1_r5", config=RouterConfig)#sydsy2rr1ucs
@@ -44,15 +38,18 @@ class SimpleBGPTopo(IPTopo):
         as1_r13= self.addRouter("as1_r13", config=RouterConfig)#sin1sgcs2g2nc5
         as1_r14= self.addRouter("as1_r14", config=RouterConfig)#sinsg1pb1nc5
         as1_r15= self.addRouter("as1_r15", config=RouterConfig)#singss1pb1nc5
-        
-        
+
+        vodafone=self.addRouter("vodafone", config=RouterConfig)
+        ntt=self.addRouter("ntt", config=RouterConfig)
+        equinix=self.addRouter("equinix", config=RouterConfig)
+        telstra=self.addRouter("telstra", config=RouterConfig)
+
+
         
         
     
         as1_bb1.addDaemon(OSPF6)
         as1_bb2.addDaemon(OSPF6)
-        #as1_r1.addDaemon(OSPF6)
-        #as1_r2.addDaemon(OSPF6)
         as1_r3.addDaemon(OSPF6)
         as1_r4.addDaemon(OSPF6)
         as1_r5.addDaemon(OSPF6)
@@ -66,12 +63,13 @@ class SimpleBGPTopo(IPTopo):
         as1_r13.addDaemon(OSPF6)
         as1_r14.addDaemon(OSPF6)
         as1_r15.addDaemon(OSPF6)
-
+        vodafone.addDaemon(OSPF6)
+        ntt.addDaemon(OSPF6)
+        equinix.addDaemon(OSPF6)
+        telstra.addDaemon(OSPF6)
 
         as1_bb1.addDaemon(OSPF)
         as1_bb2.addDaemon(OSPF)
-        #as1_r1.addDaemon(OSPF6)
-        #as1_r2.addDaemon(OSPF6)
         as1_r3.addDaemon(OSPF)
         as1_r4.addDaemon(OSPF)
         as1_r5.addDaemon(OSPF)
@@ -85,22 +83,59 @@ class SimpleBGPTopo(IPTopo):
         as1_r13.addDaemon(OSPF)
         as1_r14.addDaemon(OSPF)
         as1_r15.addDaemon(OSPF)
+        vodafone.addDaemon(OSPF)
+        ntt.addDaemon(OSPF)
+        equinix.addDaemon(OSPF)
+        telstra.addDaemon(OSPF)
+
+
+        #adding BGP to establish iBGP sessions
+        as1_bb1.addDaemon(BGP, address_families=(family,))
+        as1_bb2.addDaemon(BGP, address_families=(family,))
+        as1_r3.addDaemon(BGP, address_families=(family,))
+        as1_r4.addDaemon(BGP, address_families=(family,))
+        as1_r5.addDaemon(BGP, address_families=(family,))
+        as1_r6.addDaemon(BGP, address_families=(family,))
+        as1_r7.addDaemon(BGP, address_families=(family,))
+        as1_r8.addDaemon(BGP, address_families=(family,))
+        as1_r9.addDaemon(BGP, address_families=(family,))
+        as1_r10.addDaemon(BGP, address_families=(family,))
+        as1_r11.addDaemon(BGP, address_families=(family,))
+        as1_r12.addDaemon(BGP, address_families=(family,))
+        as1_r13.addDaemon(BGP, address_families=(family,))
+        as1_r14.addDaemon(BGP, address_families=(family,))
+        as1_r15.addDaemon(BGP, address_families=(family,))
+        
 
 
 
 
 
+        # set up the AS
+        self.addAS(1, (as1_bb1, as1_bb2, as1_r3, as1_r4, as1_r5,as1_r6, as1_r7,
+         as1_r8, as1_r9,  as1_r10, as1_r11, as1_r12, as1_r13, as1_r14, as1_r15))
+        self.addAS(2, routers=[vodafone])
+        self.addAS(3, routers=[ntt])
+        self.addAS(4, routers=[equinix])
+        self.addAS(5, routers=[telstra])
+        
+        #set up the route reflectors
+        set_rr(self, rr=as1_r5, peers=[as1_bb1, as1_r6,as1_r7,as1_r8,as1_r9])
+        set_rr(self, rr=as1_r6, peers=[as1_bb2, as1_r5,as1_r7,as1_r8,as1_r9])
+
+        set_rr(self, rr=as1_r7, peers=[as1_bb2, as1_r5,as1_r6,as1_r8,as1_r9])
+        set_rr(self, rr=as1_r8, peers=[as1_r11, as1_r5,as1_r6,as1_r7,as1_r9])
+        set_rr(self, rr=as1_r9, peers=[as1_r10, as1_r11, as1_r5,as1_r6,as1_r7,as1_r8])
+        
 
         # Add Links
         self.addLink(as1_bb1, as1_bb2, igp_metric=1)
         self.addLink (as1_bb1, as1_r5, igp_metric=1)
         self.addLink  (as1_bb1, as1_r3, igp_metric=1)
-        #self.addLink  (as1_bb1, as1_r1, igp_metric=1)
         self.addLink  (as1_bb1,  as1_r10, igp_metric=1)
                     
         self.addLink    (as1_bb2, as1_r6, igp_metric=1)
         self.addLink   (as1_bb2, as1_r4, igp_metric=1)
-        #self.addLink     (as1_bb2, as1_r2, igp_metric=1)
         self.addLink   (as1_bb2, as1_r7, igp_metric=1)
         self.addLink    (as1_bb2, as1_r11, igp_metric=1)
 
@@ -120,16 +155,35 @@ class SimpleBGPTopo(IPTopo):
         self.addLink   (as1_r11, as1_r15, igp_metric=1)
         self.addLink    (as1_r11, as1_r9, igp_metric=1)
         
-
-
+        self.addLink    (as1_bb1, telstra)
+        self.addLink    (as1_bb1, ntt)
+        self.addLink    (as1_bb2, telstra)
+        self.addLink    (as1_bb2, ntt)
+        self.addLink    (as1_bb2, equinix)
+        self.addLink    (as1_r14, vodafone)
+        self.addLink    (as1_r14, ntt)
+        self.addLink    (as1_r14, equinix)
+        self.addLink    (as1_r11, vodafone)
+        self.addLink    (as1_r11, telstra)
+        
+        #add eBGP session between AS
+        ebgp_session(self, as1_bb1, telstra, link_type=SHARE)
+        ebgp_session(self, as1_bb1, ntt, link_type=SHARE)
+        ebgp_session(self, as1_bb2, telstra, link_type=SHARE)
+        ebgp_session(self, as1_bb2, ntt, link_type=SHARE)
+        ebgp_session(self, as1_bb2, equinix, link_type=SHARE)
+        ebgp_session(self, as1_r14, vodafone, link_type=SHARE)
+        ebgp_session(self, as1_r14, ntt, link_type=SHARE)
+        ebgp_session(self, as1_r14, equinix, link_type=SHARE)
+        ebgp_session(self, as1_r11, vodafone, link_type=SHARE)
+        ebgp_session(self, as1_r11, telstra, link_type=SHARE)
+        
         # --- Hosts ---
         h1 = self.addHost("h1")
         h2 = self.addHost("h2")
 
         self.addLink(h1,as1_bb1,igp_metric=1)
         self.addLink(h2,as1_bb2,igp_metric=1)
-
-
 
 
         super().build(*args, **kwargs)
