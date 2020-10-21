@@ -38,16 +38,16 @@ class SimpleBGPTopo(IPTopo):
         as1_r13= self.addRouter("as1_r13", config=RouterConfig)#sin1sgcs2g2nc5
         as1_r14= self.addRouter("as1_r14", config=RouterConfig)#sinsg1pb1nc5
         as1_r15= self.addRouter("as1_r15", config=RouterConfig)#singss1pb1nc5
-
+        
         vodafone=self.addRouter("vodafone", config=RouterConfig)
         ntt=self.addRouter("ntt", config=RouterConfig)
         equinix=self.addRouter("equinix", config=RouterConfig)
         telstra=self.addRouter("telstra", config=RouterConfig)
-
+        
 
         
         
-    
+        
         as1_bb1.addDaemon(OSPF6)
         as1_bb2.addDaemon(OSPF6)
         as1_r3.addDaemon(OSPF6)
@@ -67,7 +67,7 @@ class SimpleBGPTopo(IPTopo):
         ntt.addDaemon(OSPF6)
         equinix.addDaemon(OSPF6)
         telstra.addDaemon(OSPF6)
-
+        
         as1_bb1.addDaemon(OSPF)
         as1_bb2.addDaemon(OSPF)
         as1_r3.addDaemon(OSPF)
@@ -88,29 +88,33 @@ class SimpleBGPTopo(IPTopo):
         equinix.addDaemon(OSPF)
         telstra.addDaemon(OSPF)
 
-
+        
         #adding BGP to establish iBGP sessions
-        as1_bb1.addDaemon(BGP, address_families=(family,))
-        as1_bb2.addDaemon(BGP, address_families=(family,))
-        as1_r3.addDaemon(BGP, address_families=(family,))
-        as1_r4.addDaemon(BGP, address_families=(family,))
-        as1_r5.addDaemon(BGP, address_families=(family,))
-        as1_r6.addDaemon(BGP, address_families=(family,))
-        as1_r7.addDaemon(BGP, address_families=(family,))
-        as1_r8.addDaemon(BGP, address_families=(family,))
-        as1_r9.addDaemon(BGP, address_families=(family,))
-        as1_r10.addDaemon(BGP, address_families=(family,))
-        as1_r11.addDaemon(BGP, address_families=(family,))
-        as1_r12.addDaemon(BGP, address_families=(family,))
-        as1_r13.addDaemon(BGP, address_families=(family,))
-        as1_r14.addDaemon(BGP, address_families=(family,))
-        as1_r15.addDaemon(BGP, address_families=(family,))
+        as1_bb1.addDaemon(BGP)
+        as1_bb2.addDaemon(BGP)
+        as1_r3.addDaemon(BGP)
+        as1_r4.addDaemon(BGP)
+        as1_r5.addDaemon(BGP)
+        as1_r6.addDaemon(BGP)
+        as1_r7.addDaemon(BGP)
+        as1_r8.addDaemon(BGP)
+        as1_r9.addDaemon(BGP)
+        as1_r10.addDaemon(BGP)
+        as1_r11.addDaemon(BGP)
+        as1_r12.addDaemon(BGP)
+        as1_r13.addDaemon(BGP)
+        as1_r14.addDaemon(BGP)
+        as1_r15.addDaemon(BGP)
+        vodafone.addDaemon(BGP)
+        ntt.addDaemon(BGP)
+        equinix.addDaemon(BGP)
+        telstra.addDaemon(BGP)
         
 
 
 
 
-
+        
         # set up the AS
         self.addAS(1, (as1_bb1, as1_bb2, as1_r3, as1_r4, as1_r5,as1_r6, as1_r7,
          as1_r8, as1_r9,  as1_r10, as1_r11, as1_r12, as1_r13, as1_r14, as1_r15))
@@ -120,40 +124,66 @@ class SimpleBGPTopo(IPTopo):
         self.addAS(5, routers=[telstra])
         
         #set up the route reflectors
-        set_rr(self, rr=as1_r5, peers=[as1_bb1, as1_r6,as1_r7,as1_r8,as1_r9])
-        set_rr(self, rr=as1_r6, peers=[as1_bb2, as1_r5,as1_r7,as1_r8,as1_r9])
+        set_rr(self, rr=as1_r5, peers=[as1_bb1, as1_r3,as1_r4])
+        set_rr(self, rr=as1_r6, peers=[as1_bb2, as1_r3, as1_r4])
 
-        set_rr(self, rr=as1_r7, peers=[as1_bb2, as1_r5,as1_r6,as1_r8,as1_r9])
-        set_rr(self, rr=as1_r8, peers=[as1_r11, as1_r5,as1_r6,as1_r7,as1_r9])
-        set_rr(self, rr=as1_r9, peers=[as1_r10, as1_r11, as1_r5,as1_r6,as1_r7,as1_r8])
+        set_rr(self, rr=as1_r7, peers=[as1_bb2])
+        set_rr(self, rr=as1_r8, peers=[as1_r11])
+        set_rr(self, rr=as1_r9, peers=[as1_r10, as1_r11, as1_r12, as1_r13, as1_r14,as1_r15])
+        #route reflectors in full mesh
+        self.addiBGPFullMesh(1, routers=[as1_r5, as1_r6, as1_r7, as1_r8, as1_r9])
+        
         
 
         # Add Links
-        self.addLink(as1_bb1, as1_bb2, igp_metric=1)
-        self.addLink (as1_bb1, as1_r5, igp_metric=1)
-        self.addLink  (as1_bb1, as1_r3, igp_metric=1)
-        self.addLink  (as1_bb1,  as1_r10, igp_metric=1)
+        self.addLink (as1_bb1, as1_bb2, igp_metric=1, params1={"ip": "BABE:1:10:0304::/64"},
+                     params2={"ip": "BABE:1:10:0402::/64"})
+        self.addLink (as1_bb1, as1_r5, igp_metric=1, params1={"ip": "BABE:1:10:0301::/64"},
+                     params2={"ip": "BABE:1:10:0600::/64"})
+        self.addLink  (as1_bb1, as1_r3, igp_metric=1, params1={"ip": "BABE:1:10:0300::/64"},
+                     params2={"ip": "BABE:1:10:0101::/64"})
+        self.addLink  (as1_bb1,  as1_r10, igp_metric=1, params1={"ip": "BABE:1:10:0305::/64"},
+                     params2={"ip": "BABE:1:11:0F00::/64"})
                     
-        self.addLink    (as1_bb2, as1_r6, igp_metric=1)
-        self.addLink   (as1_bb2, as1_r4, igp_metric=1)
-        self.addLink   (as1_bb2, as1_r7, igp_metric=1)
-        self.addLink    (as1_bb2, as1_r11, igp_metric=1)
+        self.addLink    (as1_bb2, as1_r6, igp_metric=1, params1={"ip": "BABE:1:10:0401::/64"},
+                     params2={"ip": "BABE:1:10:0500::/64"})
+        self.addLink   (as1_bb2, as1_r4, igp_metric=1, params1={"ip": "BABE:1:10:0400::/64"},
+                     params2={"ip": "BABE:1:10:0201::/64"})
+        self.addLink   (as1_bb2, as1_r7, igp_metric=1, params1={"ip": "BABE:1:10:0407::/64"},
+                     params2={"ip": "BABE:1:10:0701::/64"})
+        self.addLink    (as1_bb2, as1_r11, igp_metric=1, params1={"ip": "BABE:1:10:0403::/64"},
+                     params2={"ip": "BABE:1:11:1000::/64"})
 
-        self.addLink   (as1_r3, as1_r4, igp_metric=1)
-        self.addLink   (as1_r3, as1_r12, igp_metric=1)
+        self.addLink   (as1_r3, as1_r4, igp_metric=1, params1={"ip": "BABE:1:10:0100::/64"},
+                     params2={"ip": "BABE:1:10:0200::/64"})
+        self.addLink   (as1_r3, as1_r12, igp_metric=1, params1={"ip": "BABE:1:10:0102::/64"},
+                     params2={"ip": "BABE:1:11:0D00::/64"})
 
-        self.addLink    (as1_r7, as1_r8, igp_metric=1)
+        self.addLink    (as1_r7, as1_r8, igp_metric=1, params1={"ip": "BABE:1:10:0700::/64"},
+                     params2={"ip": "BABE:1:11:1100::/64"})
 
-        self.addLink   (as1_r8, as1_r11, igp_metric=1)
+        self.addLink   (as1_r8, as1_r11, igp_metric=1, params1={"ip": "BABE:1:11:1101::/64"},
+                     params2={"ip": "BABE:1:11:1005::/64"})
 
-        self.addLink   ( as1_r10, as1_r11, igp_metric=1)
-        self.addLink   ( as1_r10,  as1_r14, igp_metric=1)
-        self.addLink   ( as1_r10,  as1_r9, igp_metric=1)
-        self.addLink    ( as1_r10,  as1_r12, igp_metric=1)
+        self.addLink   ( as1_r10, as1_r11, igp_metric=1, params1={"ip": "BABE:1:11:0F02::/64"},
+                     params2={"ip": "BABE:1:11:1002::/64"})
+        self.addLink   ( as1_r10,  as1_r14, igp_metric=1, params1={"ip": "BABE:1:11:0F04::/64"},
+                     params2={"ip": "BABE:1:11:1300::/64"})
+        self.addLink   ( as1_r10,  as1_r9, igp_metric=1, params1={"ip": "BABE:1:11:0F03::/64"},
+                     params2={"ip": "BABE:1:11:1201::/64"})
+        self.addLink    ( as1_r10,  as1_r12, igp_metric=1, params1={"ip": "BABE:1:11:0F01::/64"},
+                     params2={"ip": "BABE:1:11:0D02::/64"})
 
-        self.addLink    (as1_r11, as1_r13, igp_metric=1)
-        self.addLink   (as1_r11, as1_r15, igp_metric=1)
-        self.addLink    (as1_r11, as1_r9, igp_metric=1)
+        self.addLink    (as1_r11, as1_r13, igp_metric=1, params1={"ip": "BABE:1:11:1001::/64"},
+                     params2={"ip": "BABE:1:11:0E00::/64"})
+        self.addLink   (as1_r11, as1_r15, igp_metric=1, params1={"ip": "BABE:1:11:1004::/64"},
+                     params2={"ip": "BABE:1:11:1402::/64"})
+        self.addLink    (as1_r11, as1_r9, igp_metric=1, params1={"ip": "BABE:1:11:1003::/64"},
+                     params2={"ip": "BABE:1:11:1200::/64"})
+        self.addLink    (as1_r12, as1_r13, igp_metric=1, params1={"ip": "BABE:1:11:0D01::/64"},
+                     params2={"ip": "BABE:1:11:0E01::/64"})
+        
+
         
         self.addLink    (as1_bb1, telstra)
         self.addLink    (as1_bb1, ntt)
