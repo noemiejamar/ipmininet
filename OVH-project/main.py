@@ -2,7 +2,8 @@
 from ipmininet.ipnet import IPNet
 from ipmininet.cli import IPCLI
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr
+from ipmininet.router.config.ripng import RIPng
+from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, AF_INET
 from ipmininet.router.config import ebgp_session, SHARE , CLIENT_PROVIDER, AccessList, CommunityList
 import ipmininet
 
@@ -43,48 +44,79 @@ class SimpleBGPTopo(IPTopo):
         telstra2=self.addRouter("telstra2", config=RouterConfig)
         telstra3=self.addRouter("telstra3", config=RouterConfig)
 
+        # --- Hosts ---
+        h1 = self.addHost("h1")
+        h2 = self.addHost("h2")
+
 
         as16276_routers=[as1_bb1, as1_bb2, as1_r3, as1_r4, as1_r5,as1_r6, as1_r7,
         as1_r8, as1_r9,  as1_r10, as1_r11, as1_r12, as1_r13, as1_r14, as1_r15]
         
-        self.addAS(16276, (as1_bb1, as1_bb2, as1_r3, as1_r4, as1_r5,as1_r6, as1_r7,
-        as1_r8, as1_r9,  as1_r10, as1_r11, as1_r12, as1_r13, as1_r14, as1_r15))
-        self.addAS(3, (ntt1, ntt2,ntt3))
-        self.addAS(4, (equinix1,equinix2))
-        self.addAS(5, (telstra1,telstra2,telstra3))
+        self.addAS(16276, tuple([as1_bb1, as1_bb2, as1_r3, as1_r4, as1_r5,as1_r6, as1_r7,
+        as1_r8, as1_r9,  as1_r10, as1_r11, as1_r12, as1_r13, as1_r14, as1_r15]))
+        self.addAS(3, tuple([ntt1, ntt2,ntt3]))
+        self.addAS(4, tuple([equinix1,equinix2]))
+        self.addAS(5, tuple([telstra1, telstra2, telstra3]))
+        
         
         for r in as16276_routers:
             r.addDaemon(OSPF)
             r.addDaemon(OSPF6)
-            r.addDaemon(BGP, family=AF_INET6(redistribute=('connected')))
+            r.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+            r.addDaemon(RIPng)
 
 
         telstra1.addDaemon(OSPF)
         telstra1.addDaemon(OSPF6)
-        telstra1.addDaemon(BGP, family=AF_INET6(redistribute=('connected')))
+        telstra1.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        telstra1.addDaemon(RIPng)
         telstra2.addDaemon(OSPF)
         telstra2.addDaemon(OSPF6)
-        telstra2.addDaemon(BGP, family=AF_INET6(redistribute=('connected')))
+        telstra2.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        telstra2.addDaemon(RIPng)
         telstra3.addDaemon(OSPF)
         telstra3.addDaemon(OSPF6)
-        telstra3.addDaemon(BGP, family=AF_INET6(redistribute=('connected')))
+        telstra3.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        telstra3.addDaemon(RIPng)
         
         ntt1.addDaemon(OSPF)
         ntt1.addDaemon(OSPF6)
-        ntt1.addDaemon(BGP, family=AF_INET6(redistribute=('connected')))
+        ntt1.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        ntt1.addDaemon(RIPng)
         ntt2.addDaemon(OSPF)
         ntt2.addDaemon(OSPF6)
-        ntt2.addDaemon(BGP, family=AF_INET6(redistribute=( 'connected')))
+        ntt2.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        ntt2.addDaemon(RIPng)
         ntt3.addDaemon(OSPF)
         ntt3.addDaemon(OSPF6)
-        ntt3.addDaemon(BGP, family=AF_INET6(redistribute=( 'connected')))
-
+        ntt3.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        ntt3.addDaemon(RIPng)
         equinix1.addDaemon(OSPF)
         equinix1.addDaemon(OSPF6)
-        equinix1.addDaemon(BGP, family=AF_INET6(redistribute=( 'connected')))
+        equinix1.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        equinix1.addDaemon(RIPng)
         equinix2.addDaemon(OSPF)
         equinix2.addDaemon(OSPF6)
-        equinix2.addDaemon(BGP, family=AF_INET6(redistribute=('connected')))
+        equinix2.addDaemon(BGP, address_families=(
+                    AF_INET(redistribute=('connected',)),
+                    AF_INET6(redistribute=('connected',))))
+        equinix2.addDaemon(RIPng)
 
          # Add Links
 
@@ -141,19 +173,19 @@ class SimpleBGPTopo(IPTopo):
         #inter AS links
         self.addLink    (as1_bb1, telstra1, params1={"ip": "BABE:1:10:0302::/64"},
                      params2={"ip": "BABE:1:10:0800::/64"})
-        self.addLink    (as1_bb1, ntt1, params1={"ip": "BABE:1:10:0303::/64"},
+        self.addLink    (as1_bb1, ntt1, igp_metric=1,params1={"ip": "BABE:1:10:0303::/64"},
                      params2={"ip": "BABE:1:10:0900::/64"})
-        self.addLink    (as1_bb2, telstra2, params1={"ip": "BABE:1:10:0404::/64"},
+        self.addLink    (as1_bb2, telstra2, igp_metric=1,params1={"ip": "BABE:1:10:0404::/64"},
                      params2={"ip": "BABE:1:10:0A00::/64"})
-        self.addLink    (as1_bb2, ntt2, params1={"ip": "BABE:1:10:0405::/64"},
+        self.addLink    (as1_bb2, ntt2, igp_metric=1, params1={"ip": "BABE:1:10:0405::/64"},
                      params2={"ip": "BABE:1:10:0B00::/64"})                     
-        self.addLink    (as1_bb2, equinix1, params1={"ip": "BABE:1:10:0406::/64"},
+        self.addLink    (as1_bb2, equinix1,igp_metric=1, params1={"ip": "BABE:1:10:0406::/64"},
                      params2={"ip": "BABE:1:10:0C00::/64"})  
-        self.addLink    (as1_r14, ntt3, params1={"ip": "BABE:1:11:1301::/64"},
+        self.addLink    (as1_r14, ntt3,igp_metric=1, params1={"ip": "BABE:1:11:1301::/64"},
                      params2={"ip": "BABE:1:11:1900::/64"}) 
-        self.addLink    (as1_r14, equinix2, params1={"ip": "BABE:1:11:1302::/64"},
+        self.addLink    (as1_r14, equinix2,igp_metric=1, params1={"ip": "BABE:1:11:1302::/64"},
                      params2={"ip": "BABE:1:11:1800::/64"}) 
-        self.addLink    (as1_r15, telstra3, params1={"ip": "BABE:1:11:1401::/64"},
+        self.addLink    (as1_r15, telstra3,igp_metric=1, params1={"ip": "BABE:1:11:1401::/64"},
                      params2={"ip": "BABE:1:11:1600::/64"}) 
 
 
@@ -175,6 +207,7 @@ class SimpleBGPTopo(IPTopo):
         set_rr(self, rr=as1_r11, peers=[as1_r12, as1_r13, as1_r14, as1_r15])
 
 
+        # --- Communities---
 
         #local_pref=CommunityList('loca-pref','16276:80')
         al = AccessList(name='all', entries=('any',))
@@ -199,12 +232,13 @@ class SimpleBGPTopo(IPTopo):
 
 
 
-        # --- Hosts ---
-        h1 = self.addHost("h1")
-        h2 = self.addHost("h2")
-
-        self.addLink(h1,as1_bb2,igp_metric=1)
+        self.addLink(h1,telstra1,igp_metric=1)
         self.addLink(h2,as1_bb1,igp_metric=1)
+
+        self.addSubnet(nodes=[telstra1, h1], subnets=["BABE:1:12::/64"])
+        self.addSubnet(nodes=[as1_bb1, h2], subnets=["BABE:1:13::/64"])
+
+        
 
 
 
