@@ -252,7 +252,6 @@ class SimpleBGPTopo(IPTopo):
                         dns_slaves=[dns_slave], nodes=[webserver], records=records)
 
 
-
         self.addLink(h1,telstra1,igp_metric=1)
         self.addLink(h2,as1_bb1,igp_metric=1)
 
