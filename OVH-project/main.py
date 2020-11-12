@@ -235,29 +235,29 @@ class SimpleBGPTopo(IPTopo):
         domain = "ovh.com"
         # Add hosts
 
-        ovh_webserver = self.addHost('ovh_webserver')
-        l_r3_ovh_webserver = self.addLink(as1_r3, ovh_webserver)
-        self.addSubnet(links=[l_r3_ovh_webserver],
+        server = self.addHost('server')
+        l_r3_server = self.addLink(as1_r3, server)
+        self.addSubnet(links=[l_r3_server],
                        subnets=["139.99.4.0/24", "BABE:1::/64"])
 
-        ovh_dns_master = self.addHost('ovh_dns_master')
-        ovh_dns_master.addDaemon(Named)
-        self.addLink(as1_bb1, ovh_dns_master)
+        master = self.addHost('master')
+        master.addDaemon(Named)
+        self.addLink(as1_bb1, master)
 
-        ovh_dns_slave = self.addHost('ovh_dns_slave')
-        ovh_dns_slave.addDaemon(Named)
-        self.addLink(as1_bb2, ovh_dns_slave)
+        slave = self.addHost('slave')
+        slave.addDaemon(Named)
+        self.addLink(as1_bb2, slave)
 
         # Declare a new DNS Zone
 
-        records = [ARecord(ovh_webserver, "BABE:1::2", ttl=120)]
-        self.addDNSZone(name=domain, dns_master=ovh_dns_master,
-                        dns_slaves=[ovh_dns_slave], nodes=[ovh_webserver], records=records)
+        records = [ARecord(server, "BABE:1::2", ttl=120)]
+        self.addDNSZone(name=domain, dns_master=master,
+                        dns_slaves=[slave], nodes=[server], records=records)
 
-        ptr_record = PTRRecord("BABE:1::2", ovh_webserver + domain, ttl=120)
+        ptr_record = PTRRecord("BABE:1::2", server + domain, ttl=120)
         reverse_domain_name = ip_address("BABE:1::").reverse_pointer[-10:]
-        self.addDNSZone(name=reverse_domain_name, dns_master=ovh_dns_master,
-                        dns_slaves=[ovh_dns_slave], records=[ptr_record],
+        self.addDNSZone(name=reverse_domain_name, dns_master=master,
+                        dns_slaves=[slave], records=[ptr_record],
                         ns_domain_name=domain, retry_time=8200)
 
 
