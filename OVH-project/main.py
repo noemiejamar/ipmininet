@@ -235,30 +235,31 @@ class SimpleBGPTopo(IPTopo):
         domain = "ovh.com"
         # Add hosts
 
-        server = self.addHost('server')
+        server = self.addHost('server', ip=("139.99.0.50", "BABE:1:10:5000::"))  # routerID start at 50 for hosts
         l_r3_server = self.addLink(as1_r3, server)
         self.addSubnet(links=[l_r3_server],
                        subnets=["139.99.4.0/24", "BABE:1::/64"])
 
-        master = self.addHost('master')
+        master = self.addHost('master', ip=("139.99.0.51", "BABE:1:10:5100::"))
         master.addDaemon(Named)
         self.addLink(as1_bb1, master)
 
-        slave = self.addHost('slave')
+        slave = self.addHost('slave', ip=("139.99.0.52", "BABE:1:10:5200::"))
         slave.addDaemon(Named)
         self.addLink(as1_bb2, slave)
 
         # Declare a new DNS Zone
-
-        records = [ARecord(server, "BABE:1::2", ttl=120)]
+        """"
+        #records = [ARecord(server, "BABE:1::2", ttl=120)]
         self.addDNSZone(name=domain, dns_master=master,
-                        dns_slaves=[slave], nodes=[server], records=records)
+                        dns_slaves=[slave], nodes=[server])
 
         ptr_record = PTRRecord("BABE:1::2", server + domain, ttl=120)
         reverse_domain_name = ip_address("BABE:1::").reverse_pointer[-10:]
         self.addDNSZone(name=reverse_domain_name, dns_master=master,
                         dns_slaves=[slave], records=[ptr_record],
                         ns_domain_name=domain, retry_time=8200)
+        """
 
 
         self.addLink(h1,telstra1,igp_metric=1)
