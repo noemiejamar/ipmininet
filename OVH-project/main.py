@@ -6,6 +6,8 @@ from ipmininet.router.config.ripng import RIPng
 from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, AF_INET
 from ipmininet.router.config import ebgp_session, SHARE , CLIENT_PROVIDER, AccessList, CommunityList
 from ipmininet.host.config import Named, ARecord, PTRRecord
+from ipaddress import ip_address
+
 import ipmininet
 
 
@@ -230,26 +232,33 @@ class SimpleBGPTopo(IPTopo):
 
 
         # --- DNS network---
+        domain = "ovh.com"
         # Add hosts
 
-        webserver = self.addHost('webserver')
-        l_r3_webserver = self.addLink(as1_r3, webserver)
-        self.addSubnet(links=[l_r3_webserver],
+        ovh_webserver = self.addHost('ovh_webserver')
+        l_r3_ovh_webserver = self.addLink(as1_r3, ovh_webserver)
+        self.addSubnet(links=[l_r3_ovh_webserver],
                        subnets=["139.99.4.0/24", "BABE:1::/64"])
 
-        dns_master = self.addHost('dns_master')
-        dns_master.addDaemon(Named)
-        self.addLink(as1_bb1, dns_master)
+        ovh_dns_master = self.addHost('ovh_dns_master')
+        ovh_dns_master.addDaemon(Named)
+        self.addLink(as1_bb1, ovh_dns_master)
 
-        dns_slave = self.addHost('dns_slave')
-        dns_slave.addDaemon(Named)
-        self.addLink(as1_bb2, dns_slave)
+        ovh_dns_slave = self.addHost('ovh_dns_slave')
+        ovh_dns_slave.addDaemon(Named)
+        self.addLink(as1_bb2, ovh_dns_slave)
 
         # Declare a new DNS Zone
 
-        records = [ARecord(webserver, "BABE::2", ttl=120)]
-        self.addDNSZone(name="ovh.com", dns_master=dns_master,
-                        dns_slaves=[dns_slave], nodes=[webserver], records=records)
+        records = [ARecord(ovh_webserver, "BABE:1::2", ttl=120)]
+        self.addDNSZone(name=domain, dns_master=ovh_dns_master,
+                        dns_slaves=[ovh_dns_slave], nodes=[ovh_webserver], records=records)
+
+        ptr_record = PTRRecord("BABE:1::2", ovh_webserver + domain, ttl=120)
+        reverse_domain_name = ip_address("BABE:1::").reverse_pointer[-10:]
+        self.addDNSZone(name=reverse_domain_name, dns_master=ovh_dns_master,
+                        dns_slaves=[ovh_dns_slave], records=[ptr_record],
+                        ns_domain_name=domain, retry_time=8200)
 
 
         self.addLink(h1,telstra1,igp_metric=1)
