@@ -247,8 +247,6 @@ class SimpleBGPTopo(IPTopo):
 
         # Declare a new DNS Zone
 
-        # By default all the NS, A and AAAA records are generated
-        # but you can add them explicitly to change their TTL
         records = [ARecord(webserver, "BABE::2", ttl=120)]
         self.addDNSZone(name="ovh.com", dns_master=dns_master,
                         dns_slaves=[dns_slave], nodes=[webserver], records=records)
