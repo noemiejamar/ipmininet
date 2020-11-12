@@ -5,6 +5,7 @@ from ipmininet.iptopo import IPTopo
 from ipmininet.router.config.ripng import RIPng
 from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, AF_INET
 from ipmininet.router.config import ebgp_session, SHARE , CLIENT_PROVIDER, AccessList, CommunityList
+from ipmininet.host.config import Named, ARecord, PTRRecord
 import ipmininet
 
 
@@ -226,9 +227,31 @@ class SimpleBGPTopo(IPTopo):
             .set_local_pref(70, from_peer=as1_r3, matching=(local_pref_SIN,))
              #.set_local_pref(99, from_peer=as1_bb2, matching=(al,))\
             #.set_med(50, to_peer=as1_r10, matching=(al,))\
-       
-   
 
+
+        # --- DNS network---
+        # Add hosts
+
+        webserver = self.addHost('webserver')
+        l_r3_webserver = self.addLink(as1_r3, webserver)
+        self.addSubnet(links=[l_r3_webserver],
+                       subnets=["139.99.4.0/24", "BABE:1::/64"])
+
+        dns_master = self.addHost('dns_master')
+        dns_master.addDaemon(Named)
+        self.addLink(as1_bb1, dns_master)
+
+        dns_slave = self.addHost('dns_slave')
+        dns_slave.addDaemon(Named)
+        self.addLink(as1_bb2, dns_slave)
+
+        # Declare a new DNS Zone
+
+        # By default all the NS, A and AAAA records are generated
+        # but you can add them explicitly to change their TTL
+        records = [ARecord(webserver, "BABE::2", ttl=120)]
+        self.addDNSZone(name="ovh.com", dns_master=dns_master,
+                        dns_slaves=[dns_slave], nodes=[webserver], records=records)
 
 
 
