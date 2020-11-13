@@ -221,6 +221,9 @@ class SimpleBGPTopo(IPTopo):
 
         # --- DNS network---
         domain = "ovh.com"
+        ipv4_server_address = "139.99.0.50"  # routerID starts at 50 for hosts
+        ipv6_server_address = "BABE:1:10:5000::"
+
         # Add hosts
 
         server = self.addHost('server')
@@ -239,18 +242,25 @@ class SimpleBGPTopo(IPTopo):
         # Declare a new DNS Zone
 
         records = [
-            ARecord(server, "BABE:1::2", ttl=120)
-        ]  # routerID starts at 50 for hosts
+            ARecord(server, ipv4_server_address, ttl=120),
+            AAAARecord(server, ipv6_server_address, ttl=120)
+        ]
         self.addDNSZone(name=domain, dns_master=master,
                         dns_slaves=[slave], nodes=[server], records=records)
 
-        """"
-        ptr_record = PTRRecord("BABE:1::2", server + domain, ttl=120)
-        reverse_domain_name = ip_address("BABE:1::").reverse_pointer[-10:]
-        self.addDNSZone(name=reverse_domain_name, dns_master=master,
-                        dns_slaves=[slave], records=[ptr_record],
+        ptr_records = [
+            PTRRecord(ipv4_server_address, server + f".{domain}", ttl=120),
+            PTRRecord(ipv6_server_address, server + f".{domain}", ttl=120)
+        ]
+        reverse_domain_name_v4 = ip_address(ipv4_server_address).reverse_pointer[-10:]
+        reverse_domain_name_v6 = ip_address(ipv6_server_address).reverse_pointer[-10:]
+        self.addDNSZone(name=reverse_domain_name_v4, dns_master=master,
+                        dns_slaves=[slave], records=ptr_records,
                         ns_domain_name=domain, retry_time=8200)
-        """
+        self.addDNSZone(name=reverse_domain_name_v6, dns_master=master,
+                        dns_slaves=[slave], records=ptr_records,
+                        ns_domain_name=domain, retry_time=8200)
+
 
         self.addLink(h1, telstra1, igp_metric=1)
         self.addLink(h2, as1_bb1, igp_metric=1)
