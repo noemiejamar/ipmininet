@@ -242,7 +242,7 @@ class SimpleBGPTopo(IPTopo):
         slave.addDaemon(Named)
         self.addLink(as1_bb2, slave)
         self.addLink(as1_bb2, slave, igp_metric=1, params1={"ip": "BABE:1:10:0408::/64"},
-                     params2={"ip": "BABE:1:10:5200::/64"})
+                     params2={"ip": "BABE:1:10:5100::/64"})
 
         # Declare a new DNS Zone
 
