@@ -230,13 +230,13 @@ class SimpleBGPTopo(IPTopo):
         self.addLink(as1_r3, server, igp_metric=1, params1={"ip": "BABE:1:10:0103::/64"},
                      params2={"ip": "BABE:1:10:5000::/64"})
 
-        master = self.addHost('master')
-        master.addDaemon(Named)
+        master = self.addRouter('master')
+        master.addDaemon(Named).addDaemon(OSPF).addDaemon(OSPF6)
         self.addLink(as1_bb1, master, igp_metric=1, params1={"ip": "BABE:1:10:0306::/64"},
                      params2={"ip": "BABE:1:10:5100::/64"})
 
-        slave = self.addHost('slave')
-        slave.addDaemon(Named)
+        slave = self.addRouter('slave')
+        slave.addDaemon(Named).addDaemon(OSPF).addDaemon(OSPF6)
         self.addLink(as1_bb2, slave, igp_metric=1, params1={"ip": "BABE:1:10:0408::/64"},
                      params2={"ip": "BABE:1:10:5100::/64"})
 
