@@ -5,7 +5,7 @@ from ipmininet.iptopo import IPTopo
 from ipmininet.router.config.ripng import RIPng
 from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, AF_INET
 from ipmininet.router.config import ebgp_session, SHARE, CLIENT_PROVIDER, AccessList, CommunityList
-from ipmininet.host.config import Named, ARecord, PTRRecord, AAAARecord
+from ipmininet.host.config import Named, ARecord, PTRRecord
 from ipaddress import ip_address
 
 import ipmininet
@@ -228,7 +228,6 @@ class SimpleBGPTopo(IPTopo):
         self.addSubnet(links=[l_r3_server],
                        subnets=["139.99.4.0/24", "BABE:1::/64"])
 
-
         master = self.addHost('master')
         master.addDaemon(Named)
         self.addLink(as1_bb1, master)
@@ -239,11 +238,7 @@ class SimpleBGPTopo(IPTopo):
 
         # Declare a new DNS Zone
 
-        #records = [  # routerID starts at 50 for hosts
-        #   ARecord(server, "139.99.0.50", ttl=120),
-        #   AAAARecord(server, "BABE:1:10:5000::0", ttl=120)
-        #]
-        records = [ARecord(server, "fc00::2", ttl=120)]
+        records = [ARecord(server, "BABE:1::2", ttl=120)]
         self.addDNSZone(name=domain, dns_master=master,
                         dns_slaves=[slave], nodes=[server], records=records)
 
@@ -252,8 +247,6 @@ class SimpleBGPTopo(IPTopo):
         self.addDNSZone(name=reverse_domain_name, dns_master=master,
                         dns_slaves=[slave], records=[ptr_record],
                         ns_domain_name=domain, retry_time=8200)
-
-        # Testing hosts
 
         self.addLink(h1, telstra1, igp_metric=1)
         self.addLink(h2, as1_bb1, igp_metric=1)
