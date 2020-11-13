@@ -5,7 +5,7 @@ from ipmininet.iptopo import IPTopo
 from ipmininet.router.config.ripng import RIPng
 from ipmininet.router.config import BGP, OSPF6, OSPF, RouterConfig, AF_INET6, set_rr, AF_INET
 from ipmininet.router.config import ebgp_session, SHARE, CLIENT_PROVIDER, AccessList, CommunityList
-from ipmininet.host.config import Named, ARecord, PTRRecord
+from ipmininet.host.config import Named, ARecord, PTRRecord, AAAARecord
 from ipaddress import ip_address
 
 import ipmininet
@@ -238,7 +238,10 @@ class SimpleBGPTopo(IPTopo):
 
         # Declare a new DNS Zone
 
-        records = [ARecord(server, "BABE:1::2", ttl=120)]
+        records = [  # routerID starts at 50 for hosts
+            ARecord(server, "139.99.0.50", ttl=120),
+            AAAARecord(server, "BABE:1:10:5000::0", ttl=120)
+        ]
         self.addDNSZone(name=domain, dns_master=master,
                         dns_slaves=[slave], nodes=[server], records=records)
 
