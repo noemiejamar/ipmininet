@@ -222,25 +222,22 @@ class SimpleBGPTopo(IPTopo):
         # --- DNS network---
         domain = "ovh.com"
         # ipv4_server_address = '139.99.0.50'  # routerID starts at 50 for hosts
-        ipv6_server_address = 'babe:1:10:5001::'
+        ipv6_server_address = 'babe:1:10:5000::'
 
         # Add hosts
 
         server = self.addHost('server')
         l_r3_server = self.addLink(as1_r3, server)
         self.addLink(as1_r3, server, igp_metric=1, params1={"ip": "BABE:1:10:0103::/64"},
-                     params2={"ip": "BABE:1:10:5001::/64"})
-        # self.addSubnet(links=[l_r3_server], subnets=["139.99.4.0/24", "BABE:1::/64"])
+                     params2={"ip": "BABE:1:10:5000::/64"})
 
         master = self.addHost('master')
         master.addDaemon(Named)
-        self.addLink(as1_bb1, master)
         self.addLink(as1_bb1, master, igp_metric=1, params1={"ip": "BABE:1:10:0306::/64"},
                      params2={"ip": "BABE:1:10:5100::/64"})
 
         slave = self.addHost('slave')
         slave.addDaemon(Named)
-        self.addLink(as1_bb2, slave)
         self.addLink(as1_bb2, slave, igp_metric=1, params1={"ip": "BABE:1:10:0408::/64"},
                      params2={"ip": "BABE:1:10:5100::/64"})
 
