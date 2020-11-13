@@ -222,7 +222,7 @@ class SimpleBGPTopo(IPTopo):
         # --- DNS network---
         domain = "ovh.com"
         # ipv4_server_address = '139.99.0.50'  # routerID starts at 50 for hosts
-        ipv6_server_address = 'babe:1:10:5001::/64'
+        ipv6_server_address = 'babe:1:10:5001::'
 
         # Add hosts
 
