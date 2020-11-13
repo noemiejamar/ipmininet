@@ -239,7 +239,7 @@ class SimpleBGPTopo(IPTopo):
         # Declare a new DNS Zone
 
         records = [
-            ARecord(server, "BABE:1:10:5000::0", ttl=120)
+            ARecord(server, "BABE:1:10:5000::/64", ttl=120)
         ]  # routerID starts at 50 for hosts
         self.addDNSZone(name=domain, dns_master=master,
                         dns_slaves=[slave], nodes=[server], records=records)
