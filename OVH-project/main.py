@@ -228,8 +228,7 @@ class SimpleBGPTopo(IPTopo):
 
         server = self.addHost('server')
         l_r3_server = self.addLink(as1_r3, server)
-        self.addSubnet(links=[l_r3_server],
-                       subnets=["139.99.4.0/24", "BABE:1::/64"])
+        # self.addSubnet(links=[l_r3_server], subnets=["139.99.4.0/24", "BABE:1::/64"])
 
         master = self.addHost('master')
         master.addDaemon(Named)
@@ -260,7 +259,6 @@ class SimpleBGPTopo(IPTopo):
         self.addDNSZone(name=reverse_domain_name_v6, dns_master=master,
                         dns_slaves=[slave], records=ptr_records,
                         ns_domain_name=domain, retry_time=8200)
-
 
         self.addLink(h1, telstra1, igp_metric=1)
         self.addLink(h2, as1_bb1, igp_metric=1)
