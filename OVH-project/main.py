@@ -227,7 +227,6 @@ class SimpleBGPTopo(IPTopo):
         # Add hosts
 
         server = self.addHost('server')
-        l_r3_server = self.addLink(as1_r3, server)
         self.addLink(as1_r3, server, igp_metric=1, params1={"ip": "BABE:1:10:0103::/64"},
                      params2={"ip": "BABE:1:10:5000::/64"})
 
