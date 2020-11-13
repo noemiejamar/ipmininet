@@ -232,15 +232,15 @@ class SimpleBGPTopo(IPTopo):
 
         master = self.addRouter('master')
         master.addDaemon(Named)
-        # master.addDaemon(OSPF)
-        # master.addDaemon(OSPF6)
+        master.addDaemon(OSPF)
+        master.addDaemon(OSPF6)
         self.addLink(as1_bb1, master, igp_metric=1, params1={"ip": "BABE:1:10:0306::/64"},
                      params2={"ip": "BABE:1:10:5100::/64"})
 
         slave = self.addRouter('slave')
         slave.addDaemon(Named)
-        # slave.addDaemon(OSPF)
-        # slave.addDaemon(OSPF6)
+        slave.addDaemon(OSPF)
+        slave.addDaemon(OSPF6)
         self.addLink(as1_bb2, slave, igp_metric=1, params1={"ip": "BABE:1:10:0408::/64"},
                      params2={"ip": "BABE:1:10:5100::/64"})
 
