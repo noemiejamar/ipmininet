@@ -204,20 +204,20 @@ class SimpleBGPTopo(IPTopo):
         # local_pref=CommunityList('loca-pref','16276:80')
         al = AccessList(name='all', entries=('any',))
 
-        as1_r3.get_config(BGP) \
-            .set_community('16276:80', to_peer=as1_bb1, matching=(al,)) \
-            .set_community('16276:70', to_peer=as1_r12, matching=(al,))
+        as1_r3.get_config(BGP)\
+           .set_community('16276:80', to_peer=as1_bb1, matching=(al,))\
+           .set_community('16276:80', to_peer=as1_r4, matching=(al,))\
+           .set_community('16276:70', to_peer=as1_r12, matching=(al,))
 
         local_pref_SIN = CommunityList('loc_pref', '16276:70')
         local_pref_SYD = CommunityList('loc_pref', '16276:80')
         as1_bb1.get_config(BGP) \
             .set_local_pref(80, from_peer=as1_r3, matching=(local_pref_SYD,))
-        # .set_local_pref(99, from_peer=as1_bb2, matc       hing=(al,))\
-        # .set_med(50, to_peer=as1_r10, matching=(al,))\
-        as1_r12.get_config(BGP) \
+
+        as1_r12.get_config(BGP)\
             .set_local_pref(70, from_peer=as1_r3, matching=(local_pref_SIN,))
-        # .set_local_pref(99, from_peer=as1_bb2, matching=(al,))\
-        # .set_med(50, to_peer=as1_r10, matching=(al,))\
+
+       
 
         # --- DNS network---
         domain = "ovh.com"
