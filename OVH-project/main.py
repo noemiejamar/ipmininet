@@ -196,25 +196,117 @@ class OVH(IPTopo):
         as1_bb2.addDaemon(IP6Tables, rules=ip6_rules)
         as1_r14.addDaemon(IP6Tables, rules=ip6_rules)
         as1_r15.addDaemon(IP6Tables, rules=ip6_rules)
-
+        
+        
+        
         # --- Communities---
 
         # local_pref=CommunityList('loca-pref','16276:80')
+        # --- Communities---
+        Blue_region = CommunityList('Blue', '16276:100')
+        Other_Blue_region = CommunityList('Other than B', ['16276:101','16276:102','16276:103'])
+        Green_region = CommunityList('Green', '16276:101')
+        Other_Green_region = CommunityList('Other than G', ['16276:100','16276:102','16276:103'])
+        Orange_region = CommunityList('Orange', '16276:102')
+        Other_Orange_region = CommunityList('Other than 0', ['16276:100','16276:101','16276:103'])
+        Yellow_region = CommunityList('Yellow', '16276:103')
+        Other_Yellow_region = CommunityList('Other than Y', ['16276:100','16276:101','16276:102'])
+        Orange_Yellow_region = CommunityList('Orange Yellow', ['16276:102','16276:103'])
+        Other_O_Y_region = CommunityList('Other than O Y', ['16276:100','16276:101'])
+        All_region = CommunityList('Other than Y', ['16276:100','16276:101','16276:102','16276:103'])
+
+
+        # --- access lists ----
         al = AccessList(name='all', entries=('any',))
 
+        # ---  RouteMap ---
+        #  would have liked to set routeMap to color internal trafic
+
+        # --- Set Communities on internal trafic ---
+
         as1_r3.get_config(BGP)\
-            .set_community('16276:80', to_peer=as1_bb1, matching=(al,))\
-            .set_community('16276:80', to_peer=as1_r4, matching=(al,)) \
-            .set_community('16276:70', to_peer=as1_r12, matching=(al,))
-        local_pref_SIN = CommunityList('loc_pref', '16276:70')
-        local_pref_SYD = CommunityList('loc_pref', '16276:80')
+           .set_community('16276:100', to_peer=as1_bb1, matching=(al,))
+        as1_r5.get_config(BGP)\
+           .set_community('16276:100', to_peer=as1_bb1, matching=(al,))
+        as1_r6.get_config(BGP)\
+           .set_community('16276:101', to_peer=as1_bb2, matching=(al,))
+        as1_r4.get_config(BGP)\
+           .set_community('16276:101', to_peer=as1_bb2, matching=(al,))
+        as1_r7.get_config(BGP)\
+           .set_community('16276:101', to_peer=as1_bb2, matching=(al,))
+        
+        as1_r12.get_config(BGP)\
+           .set_community('16276:102', to_peer=as1_r10, matching=(al,))
+        as1_r10.get_config(BGP)\
+           .set_community('16276:102', to_peer=as1_r14, matching=(al,))
+        as1_r13.get_config(BGP)\
+           .set_community('16276:103', to_peer=as1_r11, matching=(al,))
+        as1_r11.get_config(BGP)\
+           .set_community('16276:103', to_peer=as1_r15, matching=(al,))
+        as1_r8.get_config(BGP)\
+           .set_community('16276:103', to_peer=as1_r11, matching=(al,))
+        
+        
+        # --- Favor Inbound trafic based on color --
+        # would have liked to use SET_AS PREPEND but could not find command
+        #
         as1_bb1.get_config(BGP) \
-            .set_local_pref(80, from_peer=as1_r3, matching=(local_pref_SYD,))
+            .deny( to_peer=ntt1, matching=(Other_Blue_region,))   
+        as1_bb1.get_config(BGP) \
+            .deny( to_peer=telstra1, matching=(All_region,))        
+        as1_bb2.get_config(BGP) \
+            .deny( to_peer=ntt2, matching=(All_region,))   
+        as1_bb2.get_config(BGP) \
+            .deny( to_peer=telstra2, matching=(Other_Green_region,))     
+        as1_bb2.get_config(BGP) \
+            .deny( to_peer=equinix1, matching=(All_region,))     
+        as1_r14.get_config(BGP) \
+            .deny( to_peer=ntt3, matching=(Other_Orange_region,))    
+        as1_r14.get_config(BGP) \
+            .deny( to_peer=equinix2, matching=(All_region,))   
+        as1_r15.get_config(BGP) \
+            .deny( to_peer=telstra3, matching=(Other_Yellow_region,))     
 
-        as1_r12.get_config(BGP) \
-            .set_local_pref(70, from_peer=as1_r3, matching=(local_pref_SIN,))
 
+        # --- Favor Outbound trafic based on color + favor NTT,  then Telstra then Equinix--     
+        # 
+        as1_bb1.get_config(BGP) \
+            .set_local_pref(300, from_peer=ntt1, matching=(Blue_region,))   
+        as1_bb1.get_config(BGP) \
+            .set_local_pref(100,  from_peer=ntt1, matching=(Other_Blue_region,))          
+        as1_bb1.get_config(BGP) \
+            .set_local_pref(200, from_peer=telstra1, matching=(Blue_region,))   
+        as1_bb1.get_config(BGP) \
+            .set_local_pref(100,  from_peer=telstra1, matching=(Other_Blue_region,))   
 
+        as1_bb2.get_config(BGP) \
+            .set_local_pref(300, from_peer=ntt2, matching=(Green_region,))   
+        as1_bb2.get_config(BGP) \
+            .set_local_pref(100,  from_peer=ntt2, matching=(Other_Green_region,))          
+        as1_bb2.get_config(BGP) \
+            .set_local_pref(200, from_peer=telstra2, matching=(Green_region,))   
+        as1_bb2.get_config(BGP) \
+            .set_local_pref(100,  from_peer=telstra2, matching=(Other_Green_region,))
+        as1_bb2.get_config(BGP) \
+            .set_local_pref(150, from_peer=equinix1, matching=(Green_region,))   
+        as1_bb2.get_config(BGP) \
+            .set_local_pref(100,  from_peer=equinix1, matching=(Other_Green_region,))
+        
+        as1_r14.get_config(BGP) \
+            .set_local_pref(300, from_peer=ntt3, matching=(Orange_Yellow_region,))   
+        as1_r14.get_config(BGP) \
+            .set_local_pref(100,  from_peer=ntt3, matching=(Other_O_Y_region,))          
+        as1_r14.get_config(BGP) \
+            .set_local_pref(150, from_peer=equinix2, matching=(Orange_Yellow_region,))   
+        as1_r14.get_config(BGP) \
+            .set_local_pref(100,  from_peer=equinix2, matching=(Other_O_Y_region,))
+        as1_r15.get_config(BGP) \
+            .set_local_pref(200,  from_peer=telstra3, matching=(Orange_Yellow_region,))
+        as1_r15.get_config(BGP) \
+            .set_local_pref(100,  from_peer=telstra3, matching=(Other_O_Y_region,))
+            
+  
+        ################################
         super().build(*args, **kwargs)
 
     def add_bgp(self, all_routers, routers_with_ebgp, telstra1, telstra2, telstra3, ntt1, ntt2, ntt3, equinix1,
