@@ -486,7 +486,8 @@ class OVH(IPTopo):
         # Send communities from neighbors
 
         all_al = AccessList('all', ('any',))
-        blackhole = AccessList('blackhole', ('2600:1f01::0/32',))
+        #blackhole = AccessList('blackhole', ('2600:1f01::0/32',))
+        blackhole = AccessList('blackhole', ('BABE:1f01::0/64',))
         client_preferred =CommunityList('PREFERED_BY_CLIENT','PERMIT','16276:120')
         client_backup =CommunityList('BACKUP_CLIENT','PERMIT','16276:115')
         no_advertise_to_europe =CommunityList('NOT_TO_EU','DENY','16276:1')
