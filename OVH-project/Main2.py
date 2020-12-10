@@ -464,36 +464,45 @@ class OVH(IPTopo):
         ebgp_session(self, anycast4, syd_bb2)
 
         # Share cost sessions
-        ebgp_session(self, sin_r5, sin_eq)
-        ebgp_session(self, syd_bb2, syd_eq)
+        ebgp_session(self, sin_r5, sin_eq, link_type=SHARE)
+        ebgp_session(self, syd_bb2, syd_eq, link_type=SHARE)
 
         # Provider sessions
-        ebgp_session(self, syd_bb1, syd_ntt1)
-        ebgp_session(self, syd_bb2, syd_ntt2)
-        ebgp_session(self, sin_r5, sin_ntt)
-        ebgp_session(self, sin_r6, sin_tel)
-        ebgp_session(self, syd_bb1, syd_tel1)
-        ebgp_session(self, syd_bb2, syd_tel2)
+        ebgp_session(self, syd_bb1, syd_ntt1,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, syd_bb2, syd_ntt2,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, sin_r5, sin_ntt,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, sin_r6, sin_tel,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, syd_bb1, syd_tel1,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, syd_bb2, syd_tel2,link_type=CLIENT_PROVIDER)
 
         # Clients sessions
-        ebgp_session(self, client1, sin_r5)
-        ebgp_session(self, client2, syd_bb1)
-        ebgp_session(self, client3, syd_bb2)
-        ebgp_session(self, client1b, sin_r5)
-        ebgp_session(self, client2b, syd_bb1)
-        ebgp_session(self, client3b, syd_bb2)
+        ebgp_session(self, client1, sin_r5,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, client2, syd_bb1,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, client3, syd_bb2,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, client1b, sin_r5,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, client2b, syd_bb1,link_type=CLIENT_PROVIDER)
+        ebgp_session(self, client3b, syd_bb2,link_type=CLIENT_PROVIDER)
 
         # Send communities from neighbors
 
         all_al = AccessList('all', ('any',))
         #blackhole = AccessList('blackhole', ('2600:1f01::0/32',))
         blackhole = AccessList('blackhole', ('BABE:1f01::0/64',))
+
+        no_advertise_to_europe =CommunityList('NOT_TO_EU','DENY','16276:150')
+        no_advertise_to_us =CommunityList('NOT_TO_EU','DENY','16276:151')
+       
+        peer=CommunityList('PEER','DENY','16276:22')
+        provider=CommunityList('PEER','DENY','16276:21')
+        client=CommunityList('CLIENT','DENY','16276:20') 
+
         client_preferred =CommunityList('PREFERED_BY_CLIENT','PERMIT','16276:120')
-        client_backup =CommunityList('BACKUP_CLIENT','PERMIT','16276:115')
-        no_advertise_to_europe =CommunityList('NOT_TO_EU','DENY','16276:1')
+        client_backup =CommunityList('BACKUP_CLIENT','PERMIT','16276:115')   
+
         blackhole_com = CommunityList('BLACKHOLE','DENY','16276:666')
 
-        #set MED for providers that have several eBGP connection to OVH to differentiate them:
+
+        #set MED for providers/peer that have several eBGP connection to OVH to differentiate them:
         #favor traffic with higher MED
         #equinix
         sin_eq.get_config(BGP).set_med(1,to_peer=sin_r5,matching=(all_al,))
@@ -542,15 +551,89 @@ class OVH(IPTopo):
         syd_bb2.get_config(BGP).set_local_pref(115,from_peer=client3,matching=(client_backup,))
 
         #router behaviour according community blackhole
-        sin_r5.get_config(BGP).add_set_action(sin_r1,set_action=Deny,matching=(blackhole,),direction='both')
-        sin_r1.get_config(BGP).add_set_action(sin_r1,set_action=Deny,matching=(blackhole,),direction='both')
+        sin_r5.get_config(BGP).deny(to_peer=sin_r1,matching=(blackhole_com,),order=10)
+        sin_r5.get_config(BGP).deny(to_peer=sin_ntt,matching=(blackhole_com,),order=10)
+        sin_r5.get_config(BGP).deny(to_peer=sin_eq,matching=(blackhole_com,),order=10)
 
-        #no_advertise_to_europe
-        sin_r1.get_config(BGP).deny(to_peer=mrs,matching=(no_advertise_to_europe,))
-        sin_r2.get_config(BGP).deny(to_peer=mrs,matching=(no_advertise_to_europe,))
+        syd_bb1.get_config(BGP).deny(to_peer=syd_tel1,matching=(blackhole_com,),order=10)
+        syd_bb1.get_config(BGP).deny(to_peer=syd_ntt1,matching=(blackhole_com,),order=10)
+        syd_bb1.get_config(BGP).deny(to_peer=syd_r5,matching=(blackhole_com,),order=10)
+        syd_bb1.get_config(BGP).deny(to_peer=syd_r3,matching=(blackhole_com,),order=10)
+
+        syd_bb2.get_config(BGP).deny(to_peer=syd_tel2,matching=(blackhole_com,),order=10)
+        syd_bb2.get_config(BGP).deny(to_peer=syd_ntt2,matching=(blackhole_com,),order=10)
+        syd_bb2.get_config(BGP).deny(to_peer=syd_eq,matching=(blackhole_com,),order=10)
+        syd_bb2.get_config(BGP).deny(to_peer=syd_r4,matching=(blackhole_com,),order=10)
+        syd_bb2.get_config(BGP).deny(to_peer=syd_r6,matching=(blackhole_com,),order=10)
+        syd_bb2.get_config(BGP).deny(to_peer=lax,matching=(blackhole_com,),order=10)
+
+        #no_advertise_to_europe control at border
+        sin_r1.get_config(BGP).deny(to_peer=mrs,matching=(no_advertise_to_europe,),order=20)
+        sin_r2.get_config(BGP).deny(to_peer=mrs,matching=(no_advertise_to_europe,),order=20)
+
+        #no_addvertise_to_europe tagging of client unwillinng /unpaying for EU traffic
+        sin_r5.get_config(BGP).set_community('16276:1',from_peer=client1,matching=(all_al,))
+        sin_r5.get_config(BGP).set_community('16276:1',from_peer=client1b,matching=(all_al,))
+
+        #no_advertise_to_america control at border
+        syd_bb2.get_config(BGP).deny(to_peer=lax,matching=(no_advertise_to_us,),order=20)
+        sin_r2.get_config(BGP).deny(to_peer=sjo,matching=(no_advertise_to_us,),order=20)
+
+        #no_addvertise_to_america tagging of client unwillinng /unpaying for america traffic
+        syd_bb1.get_config(BGP).set_community('16276:151',from_peer=client2,matching=(all_al,))
+        syd_bb1.get_config(BGP).set_community('16276:151',from_peer=client2b,matching=(all_al,))
 
 
 
+
+
+
+
+        # community Peer-client tagging PEER=20, CLIENT=21
+        sin_r5.get_config(BGP).set_community('16276:20',from_peer=client1,matching=(all_al,))
+        sin_r5.get_config(BGP).set_community('16276:20',from_peer=client1b,matching=(all_al,))
+        sin_r5.get_config(BGP).set_community('16276:22',from_peer=sin_eq,matching=(all_al,))
+        sin_r5.get_config(BGP).set_community('16276:21',from_peer=sin_ntt,matching=(all_al,))
+        
+        syd_bb1.get_config(BGP).set_community('16276:20',from_peer=client2,matching=(all_al,))
+        syd_bb1.get_config(BGP).set_community('16276:20',from_peer=client2b,matching=(all_al,))
+        syd_bb1.get_config(BGP).set_community('16276:21',from_peer=syd_tel1,matching=(all_al,))
+        syd_bb1.get_config(BGP).set_community('16276:21',from_peer=syd_ntt1,matching=(all_al,))
+ 
+
+        syd_bb2.get_config(BGP).set_community('16276:20',from_peer=client3,matching=(all_al,))
+        syd_bb2.get_config(BGP).set_community('16276:20',from_peer=client3b,matching=(all_al,))
+        syd_bb2.get_config(BGP).set_community('16276:21',from_peer=syd_tel2,matching=(all_al,))
+        syd_bb2.get_config(BGP).set_community('16276:21',from_peer=syd_ntt2,matching=(all_al,))
+        syd_bb2.get_config(BGP).set_community('16276:22',from_peer=syd_eq,matching=(all_al,))
+ 
+
+
+
+        # community Peer-client deny PEER
+        sin_r5.get_config(BGP).deny(to_peer=sin_ntt,matching=(peer,provider),order=20)
+        sin_r5.get_config(BGP).deny(to_peer=sin_eq,matching=(peer,provider),order=20)
+        sin_r5.get_config(BGP).permit(to_peer=sin_ntt,matching=(all_al,),order=30)
+        sin_r5.get_config(BGP).permit(to_peer=sin_eq,matching=(all_al,),order=30)
+               
+        syd_bb1.get_config(BGP).deny(to_peer=syd_ntt1,matching=(peer,provider),order=20)
+        syd_bb1.get_config(BGP).deny(to_peer=syd_tel1,matching=(peer,provider),order=20)
+        syd_bb1.get_config(BGP).permit(to_peer=syd_ntt1,matching=(all_al,),order=30)
+        syd_bb1.get_config(BGP).permit(to_peer=syd_tel1,matching=(all_al,),order=30)
+
+        sin_r6.get_config(BGP).deny(to_peer=sin_tel,matching=(peer,provider),order=20)
+        sin_r6.get_config(BGP).permit(to_peer=sin_tel,matching=(all_al,),order=30)
+      
+        syd_bb2.get_config(BGP).deny(to_peer=syd_ntt2,matching=(peer,provider),order=20)
+        syd_bb2.get_config(BGP).deny(to_peer=syd_tel2,matching=(peer,provider),order=20)
+        syd_bb2.get_config(BGP).deny(to_peer=syd_eq,matching=(peer,provider),order=20)
+        syd_bb2.get_config(BGP).permit(to_peer=syd_ntt2,matching=(all_al,),order=30)
+        syd_bb2.get_config(BGP).permit(to_peer=syd_tel2,matching=(all_al,),order=30)
+        syd_bb2.get_config(BGP).permit(to_peer=syd_eq,matching=(all_al,),order=30)
+
+
+
+  
         super().build(*args, **kwargs)
 
     # Returns a router with ospf, ospf6 and bgp configuration
