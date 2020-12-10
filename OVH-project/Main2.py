@@ -486,8 +486,26 @@ class OVH(IPTopo):
         # Send communities from neighbors
 
         all_al = AccessList('all', ('any',))
+        blackhole = AccessList('blackhole', ('2600:1f01::0/32',))
+        client_preferred =CommunityList('PREFERED_BY_CLIENT','PERMIT','16276:120')
+        client_backup =CommunityList('BACKUP_CLIENT','PERMIT','16276:115')
+        no_advertise_to_europe =CommunityList('NOT_TO_EU','DENY','16276:1')
+        blackhole_com = CommunityList('BLACKHOLE','DENY','16276:666')
 
-        blackhole = AccessList('blackhole', ('BABE:1f01::0/64',))
+        #set MED for providers that have several eBGP connection to OVH to differentiate them:
+        #favor traffic with higher MED
+        #equinix
+        sin_eq.get_config(BGP).set_med(1,to_peer=sin_r5,matching=(all_al,))
+        syd_eq.get_config(BGP).set_med(4,to_peer=syd_bb1,matching=(all_al,))
+        #NTT
+        sin_ntt.get_config(BGP).set_med(2,to_peer=sin_r5,matching=(all_al,))
+        syd_ntt1.get_config(BGP).set_med(1,to_peer=syd_bb1,matching=(all_al,))
+        syd_ntt2.get_config(BGP).set_med(4,to_peer=syd_bb2,matching=(all_al,))
+        #Telstra
+        sin_tel.get_config(BGP).set_med(4,to_peer=sin_r6,matching=(all_al,))
+        syd_tel1.get_config(BGP).set_med(2,to_peer=syd_bb1,matching=(all_al,))
+        syd_tel2.get_config(BGP).set_med(1,to_peer=syd_bb2,matching=(all_al,))
+
 
         # Client1 customer link
         client1.get_config(BGP).set_community('16276:120', to_peer=sin_r5, matching=(all_al,))
@@ -507,6 +525,30 @@ class OVH(IPTopo):
         client3.get_config(BGP).set_community('16276:120', to_peer=syd_bb2, matching=(all_al,))
         # Client3 customer backup link
         client3b.get_config(BGP).set_community('16276:115', to_peer=syd_bb2, matching=(all_al,))
+
+        #router behaviour according community from client
+        sin_r5.get_config(BGP).set_local_pref(120,from_peer=client1,matching=(client_preferred,) )
+        sin_r5.get_config(BGP).set_local_pref(115,from_peer=client1,matching=(client_backup,))
+        sin_r5.get_config(BGP).set_local_pref(120,from_peer=client1b,matching=(client_preferred,))
+        sin_r5.get_config(BGP).set_local_pref(115,from_peer=client1b,matching=(client_backup,))
+        syd_bb1.get_config(BGP).set_local_pref(120,from_peer=client2,matching=(client_preferred,) )
+        syd_bb1.get_config(BGP).set_local_pref(115,from_peer=client2b,matching=(client_backup,))
+        syd_bb1.get_config(BGP).set_local_pref(120,from_peer=client2b,matching=(client_preferred,) )
+        syd_bb1.get_config(BGP).set_local_pref(115,from_peer=client2,matching=(client_backup,))
+        syd_bb2.get_config(BGP).set_local_pref(120,from_peer=client3,matching=(client_preferred,) )
+        syd_bb2.get_config(BGP).set_local_pref(115,from_peer=client3b,matching=(client_backup,))
+        syd_bb2.get_config(BGP).set_local_pref(120,from_peer=client3b,matching=(client_preferred,) )
+        syd_bb2.get_config(BGP).set_local_pref(115,from_peer=client3,matching=(client_backup,))
+
+        #router behaviour according community blackhole
+        sin_r5.get_config(BGP).add_set_action(sin_r1,set_action=Deny,matching=(blackhole,),direction='both')
+        sin_r1.get_config(BGP).add_set_action(sin_r1,set_action=Deny,matching=(blackhole,),direction='both')
+
+        #no_advertise_to_europe
+        sin_r1.get_config(BGP).deny(to_peer=mrs,matching=(no_advertise_to_europe,))
+        sin_r2.get_config(BGP).deny(to_peer=mrs,matching=(no_advertise_to_europe,))
+
+
 
         super().build(*args, **kwargs)
 
