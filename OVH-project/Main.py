@@ -9,11 +9,10 @@ from ipmininet.router.config.bgp import AF_INET, AF_INET6
 from ipmininet.router.config.iptables import *
 import hashlib
 from firewall import ip6_rules
-
-# OSPF Security
 from ipmininet.router.config.zebra import AccessList
 
 
+# OSPF Security
 def createPassword(key):
     hash_object = hashlib.sha256(bytes(key, encoding='utf-8'))
     return hash_object.hexdigest()
