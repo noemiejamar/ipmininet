@@ -1,14 +1,19 @@
+
 #!/usr/bin/env python3
 
 from ipmininet.ipnet import IPNet
 from ipmininet.cli import IPCLI
 from ipmininet.iptopo import IPTopo
 from ipmininet.router.config import *
+from ipmininet.router.config.bgp import AF_INET, AF_INET6
 from ipmininet.router.config.iptables import *
 import hashlib
-
+from firewall import ip6_rules
 
 # OSPF Security
+from ipmininet.router.config.zebra import AccessList
+
+
 def createPassword(key):
     hash_object = hashlib.sha256(bytes(key, encoding='utf-8'))
     return hash_object.hexdigest()
@@ -27,6 +32,7 @@ OSPF_PW_USA = "v5x6j4S8MBDrLk6"
 class OVH(IPTopo):
 
     def build(self, *args, **kwargs):
+        print('Building the Network, Please Wait.....')
         # Add routers
         # -----------------------------------------------------------------------------------------------------
         # Singapore Routers   BABE:1:00YM    Y = 0 -> for loopback   M = 0 -> for Singapore 139.99.0
@@ -118,23 +124,23 @@ class OVH(IPTopo):
         # -----------------------------------------------------------------------------------------------------
         # Customers Routers  BABE:1:00YM:x+1 =  Y = 2 -> for customers / 139.x+1.15
         # -----------------------------------------------------------------------------------------------------
-        client1 = self.add_config_router('client1', ["BABE:1:0020:1::1/128", "139.1.15.0/32"],
+        client1 = self.add_config_router('client1', ["BABE:1:0020:1::0/128", "139.1.15.0/32"],
                                          family4=AF_INET(networks=('139.1.15.0/24',), ),
                                          family6=AF_INET6(networks=('BABE:1:0020:1::0/64', 'BABE:1f01::0/64',), ))
-        client1b = self.add_config_router('client1b', ["BABE:1:0020:1::2/128", "139.1.15.1/32"],
+        client1b = self.add_config_router('client1b', ["BABE:1:0020:1::1/128", "139.1.15.1/32"],
                                           family4=AF_INET(networks=('139.1.15.0/24',), ),
                                           family6=AF_INET6(networks=('BABE:1:0020:1::0/64', 'BABE:1f01::0/64',), ))
-        client2 = self.add_config_router('client2', ["BABE:1:0020:2::1/128", "139.2.15.0/32"],
-                                         family4=AF_INET(networks=('139.2.15.0/24',), ),
+        client2 = self.add_config_router('client2', ["BABE:1:0020:2::0/128", "139.2.14.0/32"],
+                                         family4=AF_INET(networks=('139.1.14.0/24',), ),
                                          family6=AF_INET6(networks=('BABE:1:0020:2::0/64',), ))
-        client2b = self.add_config_router('client2b', ["BABE:1:0020:2::2/128", "139.2.15.1/32"],
-                                          family4=AF_INET(networks=('139.2.15.0/24',), ),
+        client2b = self.add_config_router('client2b', ["BABE:1:0020:2::1/128", "139.1.14.1/32"],
+                                          family4=AF_INET(networks=('139.1.14.0/24',), ),
                                           family6=AF_INET6(networks=('BABE:1:0020:2::0/64',), ))
-        client3 = self.add_config_router('client3', ["BABE:1:0020:3::1/128", "139.3.15.0/32"],
+        client3 = self.add_config_router('client3', ["BABE:1:0020:3::0/128", "139.1.13.0/32"],
                                          family4=AF_INET(networks=('139.3.15.0/24',), ),
                                          family6=AF_INET6(networks=('BABE:1:0020:3::0/64',), ))
-        client3b = self.add_config_router('client3b', ["BABE:1:0020:3::2/128", "139.3.15.1/32"],
-                                          family4=AF_INET(networks=('139.3.15.0/24',), ),
+        client3b = self.add_config_router('client3b', ["BABE:1:0020:3::1/128", "139.3.13.1/32"],
+                                          family4=AF_INET(networks=('139.1.13.0/24',), ),
                                           family6=AF_INET6(networks=('BABE:1:0020:3::0/64',), ))
         # -----------------------------------------------------------------------------------------------------
         # anycast Routers  BABE:1:00YM: =  Y = 3 -> for anycast / 139.1.10
@@ -310,9 +316,9 @@ class OVH(IPTopo):
         sin_r5_link_client1['sin_r5'].addParams(ip=('139.4.96.1/24', 'BABE:4:96:1::1/64'))
         sin_r5_link_client1['client1'].addParams(ip=('139.4.96.2/24', 'BABE:4:96:1::2/64'))
 
-        sin_r5_link_client1_backup = self.addLink(sin_r5, client1b, igp_metric=2)
-        sin_r5_link_client1_backup['sin_r5'].addParams(ip=('139.4.96.3/24', 'BABE:4:96:2::1/64'))
-        sin_r5_link_client1_backup['client1b'].addParams(ip=('139.4.96.4/24', 'BABE:4:96:2::2/64'))
+        sin_r5_link_client1b = self.addLink(sin_r5, client1b, igp_metric=2)
+        sin_r5_link_client1b['sin_r5'].addParams(ip=('139.4.96.3/24', 'BABE:4:96:2::1/64'))
+        sin_r5_link_client1b['client1b'].addParams(ip=('139.4.96.4/24', 'BABE:4:96:2::2/64'))
 
         client2_link_client2b = self.addLink(client2, client2b, igp_metric=2)
         client2_link_client2b['client2'].addParams(ip=('139.97.97.1/24', 'BABE:97:97::1/64'))
@@ -322,9 +328,9 @@ class OVH(IPTopo):
         syd_bb1_link_client2['syd_bb1'].addParams(ip=('139.8.97.1/24', 'BABE:8:97:1::1/64'))
         syd_bb1_link_client2['client2'].addParams(ip=('139.8.97.2/24', 'BABE:8:97:1::2/64'))
 
-        syd_bb1_link_client2_backup = self.addLink(syd_bb1, client2b, igp_metric=2)
-        syd_bb1_link_client2_backup['syd_bb1'].addParams(ip=('139.8.97.3/24', 'BABE:8:97:2::1/64'))
-        syd_bb1_link_client2_backup['client2b'].addParams(ip=('139.8.97.4/24', 'BABE:8:97:2::2/64'))
+        syd_bb1_link_client2p = self.addLink(syd_bb1, client2b, igp_metric=2)
+        syd_bb1_link_client2p['syd_bb1'].addParams(ip=('139.8.97.3/24', 'BABE:8:97:2::1/64'))
+        syd_bb1_link_client2p['client2b'].addParams(ip=('139.8.97.4/24', 'BABE:8:97:2::2/64'))
 
         client3_link_client3b = self.addLink(client3, client3b, igp_metric=2)
         client3_link_client3b['client3'].addParams(ip=('139.98.98.1/24', 'BABE:98:98::1/64'))
@@ -334,9 +340,9 @@ class OVH(IPTopo):
         syd_bb2_link_client3['syd_bb2'].addParams(ip=('139.9.98.1/24', 'BABE:9:98:1::1/64'))
         syd_bb2_link_client3['client3'].addParams(ip=('139.9.98.2/24', 'BABE:9:98:1::2/64'))
 
-        syd_bb2_link_client3_backup = self.addLink(syd_bb2, client3b, igp_metric=2)
-        syd_bb2_link_client3_backup['syd_bb2'].addParams(ip=('139.9.98.3/24', 'BABE:9:98:2::1/64'))
-        syd_bb2_link_client3_backup['client3b'].addParams(ip=('139.9.98.4/24', 'BABE:9:98:2::2/64'))
+        syd_bb2_link_client3b = self.addLink(syd_bb2, client3b, igp_metric=2)
+        syd_bb2_link_client3b['syd_bb2'].addParams(ip=('139.9.98.3/24', 'BABE:9:98:2::1/64'))
+        syd_bb2_link_client3b['client3b'].addParams(ip=('139.9.98.4/24', 'BABE:9:98:2::2/64'))
         # -----------------------------------------------------------------------------------------------------
         # Add Hosts
         # -----------------------------------------------------------------------------------------------------
@@ -389,38 +395,38 @@ class OVH(IPTopo):
         # Add Subnets to Hosts
         # -----------------------------------------------------------------------------------------------------
         # Singapore hosts
-        self.addSubnet((sin_r3, sin_h1), subnets=('103.5.15.8/30', '2402:1f00::14/126'))
-        self.addSubnet((sin_r4, sin_h2), subnets=('103.5.15.12/30', '2402:1f00::18/126'))
-        self.addSubnet((sin_r1, sin_h3), subnets=('103.5.15.16/30', '2402:1f00::1C/126'))
-        self.addSubnet((sin_r2, sin_h4), subnets=('103.5.15.20/30', '2402:1f00::20/126'))
-        self.addSubnet((sin_r5, sin_h5), subnets=('103.5.15.24/30', '2402:1f00::24/126'))
-        self.addSubnet((sin_r6, sin_h6), subnets=('103.5.15.28/30', '2402:1f00::28/126'))
+        self.addSubnet((sin_r3, sin_h1), subnets=('139.99.0.24/30', 'BABE:1:0000::8/126'))
+        self.addSubnet((sin_r4, sin_h2), subnets=('139.99.0.28/30', 'BABE:1:0000::1C/126'))
+        self.addSubnet((sin_r1, sin_h3), subnets=('139.99.0.32/30', 'BABE:1:0000::18/126'))
+        self.addSubnet((sin_r2, sin_h4), subnets=('139.99.0.36/30', 'BABE:1:0000::2C/126'))
+        self.addSubnet((sin_r5, sin_h5), subnets=('139.99.0.40/30', 'BABE:1:0000::3C/126'))
+        self.addSubnet((sin_r6, sin_h6), subnets=('139.99.0.44/30', 'BABE:1:0000::30/126'))
         # Australia Hosts
-        self.addSubnet((syd_r3, syd_h1), subnets=('103.5.14.8/30', '2402:1f00::2C/126'))
-        self.addSubnet((syd_r4, syd_h2), subnets=('103.5.14.12/30', '2402:1f00::30/126'))
-        self.addSubnet((syd_bb1, syd_h3), subnets=('103.5.14.16/30', '2402:1f00::34/126'))
-        self.addSubnet((syd_bb2, syd_h4), subnets=('103.5.14.20/30', '2402:1f00::38/126'))
-        self.addSubnet((syd_r5, syd_h5), subnets=('103.5.14.24/30', '2402:1f00::3C/126'))
-        self.addSubnet((syd_r6, syd_h6), subnets=('103.5.14.28/30', '2402:1f00::40/126'))
+        self.addSubnet((syd_r3, syd_h1), subnets=('139.99.0.48/30', 'BABE:1:0001::8/126'))
+        self.addSubnet((syd_r4, syd_h2), subnets=('139.99.0.52/30', 'BABE:1:0001::1C/126'))
+        self.addSubnet((syd_bb1, syd_h3), subnets=('139.99.0.56/30', 'BABE:1:0001::2C/126'))
+        self.addSubnet((syd_bb2, syd_h4), subnets=('139.99.0.60/30', 'BABE:1:0001::3C/126'))
+        self.addSubnet((syd_r5, syd_h5), subnets=('139.99.0.64/30', 'BABE:1:0001::30/126'))
+        self.addSubnet((syd_r6, syd_h6), subnets=('139.99.0.68/30', 'BABE:1:0001::34/126'))
         #
-        self.addSubnet((mrs, mrs_h), subnets=('94.23.122.4/30', '2001:41d0::4/126'))
-        self.addSubnet((sjo, sjo_h), subnets=('78.32.132.8/30', '2604:2DC0::8/126'))
-        self.addSubnet((lax, lax_h), subnets=('78.32.132.12/30', '2604:2DC0::C/126'))
+        self.addSubnet((mrs, mrs_h), subnets=('139.95.0.24/30', 'BABE:1:0002::4/126'))
+        self.addSubnet((sjo, sjo_h), subnets=('139.94.0.28/30', 'BABE:1:0003::4/126'))
+        self.addSubnet((lax, lax_h), subnets=('139.94.0.44/30', 'BABE:1:0003::8/126'))
         # Equinix
-        self.addSubnet((sin_eq, sin_eq_h), subnets=('143.5.15.4/30', '2500:1f00::4/126'))
-        self.addSubnet((syd_eq, syd_eq_h), subnets=('143.5.15.8/30', '2500:1f00::8/126'))
+        self.addSubnet((sin_eq, sin_eq_h), subnets=('139.96.0.36/30', 'BABE:1:0007::1C/126'))
+        self.addSubnet((syd_eq, syd_eq_h), subnets=('139.96.0.44/30', 'BABE:1:0007::3C/126'))
         # NTT
-        self.addSubnet((sin_ntt, sin_ntt_h), subnets=('143.7.15.4/30', '2500:3f00::4/126'))
-        self.addSubnet((syd_ntt2, syd_ntt2_h), subnets=('143.7.15.8/30', '2500:3f00::8/126'))
-        self.addSubnet((syd_ntt1, syd_ntt1_h), subnets=('143.7.15.12/30', '2500:3f00::C/126'))
+        self.addSubnet((sin_ntt, sin_ntt_h), subnets=('139.97.0.48/30', 'BABE:1:0006::1C/126'))
+        self.addSubnet((syd_ntt2, syd_ntt2_h), subnets=('139.97.0.24/30', 'BABE:1:0006::8/126'))
+        self.addSubnet((syd_ntt1, syd_ntt1_h), subnets=('139.97.0.28/30', 'BABE:1:0006::10/126'))
         # Telstra
-        self.addSubnet((syd_tel1, syd_tel1_h), subnets=('143.9.15.4/30', '2500:5f00::4/126'))
-        self.addSubnet((syd_tel2, syd_tel2_h), subnets=('143.9.15.8/30', '2500:5f00::8/126'))
-        self.addSubnet((sin_tel, sin_tel_h), subnets=('143.9.15.12/30', '2500:5f00::C/126'))
+        self.addSubnet((syd_tel1, syd_tel1_h), subnets=('139.98.0.36/30', 'BABE:1:0005::1C/126'))
+        self.addSubnet((syd_tel2, syd_tel2_h), subnets=('139.98.0.32/30', 'BABE:1:0005::8/126'))
+        self.addSubnet((sin_tel, sin_tel_h), subnets=('139.98.0.44/30', 'BABE:1:0005::10/126'))
         # Clients
-        self.addSubnet((client1, client_h1), subnets=('139.1.15.4/30', 'BABE:1f00::4/126'))
-        self.addSubnet((client2, client_h2), subnets=('139.2.15.4/30', 'BABE:0020::4/126'))
-        self.addSubnet((client3, client_h3), subnets=('139.3.15.4/30', 'BABE:3f00::4/126'))
+        self.addSubnet((client1, client_h1), subnets=('139.1.15.24/30', 'BABE:1:0020:1::4/126'))
+        self.addSubnet((client2, client_h2), subnets=('139.1.14.28/30', 'BABE:1:0020:2::8/126'))
+        self.addSubnet((client3, client_h3), subnets=('139.1.13.32/30', 'BABE:1:0020:3::10/126'))
 
         # Add BGP
         anycast1.addDaemon(BGP, address_families=(
@@ -438,10 +444,7 @@ class OVH(IPTopo):
                        sin_r3, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, syd_r3, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6,
                        mrs, sjo, lax))
 
-        self.addAS(12345, (anycast1,))
-        self.addAS(12345, (anycast2,))
-        self.addAS(12345, (anycast3,))
-        self.addAS(12345, (anycast4,))
+        self.addAS(12345, (anycast1,anycast2,anycast3,anycast4))
 
         # RR iBGP sessions
         set_rr(self, rr=sin_r3, peers=[syd_r3, syd_r4, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo])
@@ -486,37 +489,12 @@ class OVH(IPTopo):
         ebgp_session(self, client2b, syd_bb1)
         ebgp_session(self, client3b, syd_bb2)
 
+
         # Send communities from neighbors
 
         all_al = AccessList('all', ('any',))
-        # blackhole = AccessList('blackhole', ('2600:1f01::0/32',))
+
         blackhole = AccessList('blackhole', ('BABE:1f01::0/64',))
-
-        no_advertise_to_europe = CommunityList('NOT_TO_EU', 'DENY', '16276:150')
-        no_advertise_to_us = CommunityList('NOT_TO_EU', 'DENY', '16276:151')
-
-        peer = CommunityList('PEER', 'DENY', '16276:22')
-        provider = CommunityList('PEER', 'DENY', '16276:21')
-        client = CommunityList('CLIENT', 'DENY', '16276:20')
-
-        client_preferred = CommunityList('PREFERED_BY_CLIENT', 'PERMIT', '16276:120')
-        client_backup = CommunityList('BACKUP_CLIENT', 'PERMIT', '16276:115')
-
-        blackhole_com = CommunityList('BLACKHOLE', 'DENY', '16276:666')
-
-        # set MED for providers/peer that have several eBGP connection to OVH to differentiate them:
-        # favor traffic with higher MED
-        # equinix
-        sin_eq.get_config(BGP).set_med(1, to_peer=sin_r5, matching=(all_al,))
-        syd_eq.get_config(BGP).set_med(4, to_peer=syd_bb1, matching=(all_al,))
-        # NTT
-        sin_ntt.get_config(BGP).set_med(2, to_peer=sin_r5, matching=(all_al,))
-        syd_ntt1.get_config(BGP).set_med(1, to_peer=syd_bb1, matching=(all_al,))
-        syd_ntt2.get_config(BGP).set_med(4, to_peer=syd_bb2, matching=(all_al,))
-        # Telstra
-        sin_tel.get_config(BGP).set_med(4, to_peer=sin_r6, matching=(all_al,))
-        syd_tel1.get_config(BGP).set_med(2, to_peer=syd_bb1, matching=(all_al,))
-        syd_tel2.get_config(BGP).set_med(1, to_peer=syd_bb2, matching=(all_al,))
 
         # Client1 customer link
         client1.get_config(BGP).set_community('16276:120', to_peer=sin_r5, matching=(all_al,))
@@ -537,89 +515,28 @@ class OVH(IPTopo):
         # Client3 customer backup link
         client3b.get_config(BGP).set_community('16276:115', to_peer=syd_bb2, matching=(all_al,))
 
-        # router behaviour according community from client
-        sin_r5.get_config(BGP).set_local_pref(120, from_peer=client1, matching=(client_preferred,))
-        sin_r5.get_config(BGP).set_local_pref(115, from_peer=client1, matching=(client_backup,))
-        sin_r5.get_config(BGP).set_local_pref(120, from_peer=client1b, matching=(client_preferred,))
-        sin_r5.get_config(BGP).set_local_pref(115, from_peer=client1b, matching=(client_backup,))
-        syd_bb1.get_config(BGP).set_local_pref(120, from_peer=client2, matching=(client_preferred,))
-        syd_bb1.get_config(BGP).set_local_pref(115, from_peer=client2b, matching=(client_backup,))
-        syd_bb1.get_config(BGP).set_local_pref(120, from_peer=client2b, matching=(client_preferred,))
-        syd_bb1.get_config(BGP).set_local_pref(115, from_peer=client2, matching=(client_backup,))
-        syd_bb2.get_config(BGP).set_local_pref(120, from_peer=client3, matching=(client_preferred,))
-        syd_bb2.get_config(BGP).set_local_pref(115, from_peer=client3b, matching=(client_backup,))
-        syd_bb2.get_config(BGP).set_local_pref(120, from_peer=client3b, matching=(client_preferred,))
-        syd_bb2.get_config(BGP).set_local_pref(115, from_peer=client3, matching=(client_backup,))
 
-        """
-        #router behaviour according community blackhole
-        sin_r5.get_config(BGP).deny(to_peer=sin_r1,matching=(blackhole_com,),order=10)
-        sin_r5.get_config(BGP).deny(to_peer=sin_ntt,matching=(blackhole_com,),order=10)
-        sin_r5.get_config(BGP).deny(to_peer=sin_eq,matching=(blackhole_com,),order=10)
-        syd_bb1.get_config(BGP).deny(to_peer=syd_tel1,matching=(blackhole_com,),order=10)
-        syd_bb1.get_config(BGP).deny(to_peer=syd_ntt1,matching=(blackhole_com,),order=10)
-        syd_bb1.get_config(BGP).deny(to_peer=syd_r5,matching=(blackhole_com,),order=10)
-        syd_bb1.get_config(BGP).deny(to_peer=syd_r3,matching=(blackhole_com,),order=10)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_tel2,matching=(blackhole_com,),order=10)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_ntt2,matching=(blackhole_com,),order=10)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_eq,matching=(blackhole_com,),order=10)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_r4,matching=(blackhole_com,),order=10)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_r6,matching=(blackhole_com,),order=10)
-        syd_bb2.get_config(BGP).deny(to_peer=lax,matching=(blackhole_com,),order=10)
-        """
-        # no_advertise_to_europe control at border
-        sin_r1.get_config(BGP).deny(to_peer=mrs, matching=(no_advertise_to_europe,), order=20)
-        sin_r2.get_config(BGP).deny(to_peer=mrs, matching=(no_advertise_to_europe,), order=20)
+        # set MED for providers/peer that have several eBGP connection to OVH to differentiate them:
+        # favor traffic with higher MED
+        # equinix
+        sin_eq.get_config(BGP).set_med(1, to_peer=sin_r5)
+        syd_eq.get_config(BGP).set_med(4, to_peer=syd_bb1)
+        # NTT
+        sin_ntt.get_config(BGP).set_med(1, to_peer=sin_r5)
+        syd_ntt1.get_config(BGP).set_med(1, to_peer=syd_bb1)
+        syd_ntt2.get_config(BGP).set_med(4, to_peer=syd_bb2)
+        # Telstra
+        sin_tel.get_config(BGP).set_med(1, to_peer=sin_r6)
+        syd_tel1.get_config(BGP).set_med(4, to_peer=syd_bb1)
+        syd_tel2.get_config(BGP).set_med(1, to_peer=syd_bb2)
 
-        # no_addvertise_to_europe tagging of client unwillinng /unpaying for EU traffic
-        sin_r5.get_config(BGP).set_community('16276:1', from_peer=client1, matching=(all_al,))
-        sin_r5.get_config(BGP).set_community('16276:1', from_peer=client1b, matching=(all_al,))
 
-        # no_advertise_to_america control at border
-        syd_bb2.get_config(BGP).deny(to_peer=lax, matching=(no_advertise_to_us,), order=20)
-        sin_r2.get_config(BGP).deny(to_peer=sjo, matching=(no_advertise_to_us,), order=20)
 
-        # no_addvertise_to_america tagging of client unwillinng /unpaying for america traffic
-        syd_bb1.get_config(BGP).set_community('16276:151', from_peer=client2, matching=(all_al,))
-        syd_bb1.get_config(BGP).set_community('16276:151', from_peer=client2b, matching=(all_al,))
-
-        # community Peer-client tagging PEER=20, CLIENT=21
-        sin_r5.get_config(BGP).set_community('16276:20', from_peer=client1, matching=(all_al,))
-        sin_r5.get_config(BGP).set_community('16276:20', from_peer=client1b, matching=(all_al,))
-        sin_r5.get_config(BGP).set_community('16276:21', from_peer=sin_eq, matching=(all_al,))
-        sin_r5.get_config(BGP).set_community('16276:21', from_peer=sin_ntt, matching=(all_al,))
-
-        syd_bb1.get_config(BGP).set_community('16276:20', from_peer=client2, matching=(all_al,))
-        syd_bb1.get_config(BGP).set_community('16276:20', from_peer=client2b, matching=(all_al,))
-        syd_bb1.get_config(BGP).set_community('16276:21', from_peer=syd_tel1, matching=(all_al,))
-        syd_bb1.get_config(BGP).set_community('16276:21', from_peer=syd_ntt1, matching=(all_al,))
-
-        syd_bb2.get_config(BGP).set_community('16276:20', from_peer=client3, matching=(all_al,))
-        syd_bb2.get_config(BGP).set_community('16276:20', from_peer=client3b, matching=(all_al,))
-        syd_bb2.get_config(BGP).set_community('16276:21', from_peer=syd_tel2, matching=(all_al,))
-        syd_bb2.get_config(BGP).set_community('16276:21', from_peer=syd_ntt2, matching=(all_al,))
-        syd_bb2.get_config(BGP).set_community('16276:21', from_peer=syd_eq, matching=(all_al,))
-
-        # community Peer-client deny PEER
-        sin_r5.get_config(BGP).deny(to_peer=sin_ntt, matching=(peer, provider), order=20)
-        sin_r5.get_config(BGP).deny(to_peer=sin_eq, matching=(peer, provider), order=20)
-        sin_r5.get_config(BGP).permit(to_peer=sin_ntt, matching=(all_al,), order=30)
-        sin_r5.get_config(BGP).permit(to_peer=sin_eq, matching=(all_al,), order=30)
-
-        syd_bb1.get_config(BGP).deny(to_peer=syd_ntt1, matching=(peer, provider), order=20)
-        syd_bb1.get_config(BGP).deny(to_peer=syd_tel1, matching=(peer, provider), order=20)
-        syd_bb1.get_config(BGP).permit(to_peer=syd_ntt1, matching=(all_al,), order=30)
-        syd_bb1.get_config(BGP).permit(to_peer=syd_tel1, matching=(all_al,), order=30)
-
-        sin_r6.get_config(BGP).deny(to_peer=sin_tel, matching=(peer, provider), order=20)
-        sin_r6.get_config(BGP).permit(to_peer=sin_tel, matching=(all_al,), order=30)
-
-        syd_bb2.get_config(BGP).deny(to_peer=syd_ntt2, matching=(peer, provider), order=20)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_tel2, matching=(peer, provider), order=20)
-        syd_bb2.get_config(BGP).deny(to_peer=syd_eq, matching=(peer, provider), order=20)
-        syd_bb2.get_config(BGP).permit(to_peer=syd_ntt2, matching=(all_al,), order=30)
-        syd_bb2.get_config(BGP).permit(to_peer=syd_tel2, matching=(all_al,), order=30)
-        syd_bb2.get_config(BGP).permit(to_peer=syd_eq, matching=(all_al,), order=30)
+        # firewall table
+        syd_bb1.addDaemon(IP6Tables, rules=ip6_rules)
+        syd_bb2.addDaemon(IP6Tables, rules=ip6_rules)
+        sin_r5.addDaemon(IP6Tables, rules=ip6_rules)
+        sin_r6.addDaemon(IP6Tables, rules=ip6_rules)
 
         super().build(*args, **kwargs)
 
@@ -647,54 +564,57 @@ if __name__ == '__main__':
         print("Setting Up OVH's Network Security......")
         print("Setting TTLs...")
         # Setting TTLs for IPV6
-        print(net['lax'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['sjo'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['sin_r5'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['sin_r6'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_bb1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_bb2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['mrs'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_eq'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['sin_eq'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_ntt1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_ntt2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['sin_ntt'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['sin_tel'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_tel1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['syd_tel2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['client1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['client2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['client3'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['client1b'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['client2b'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['client3b'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['anycast1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['anycast2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['anycast3'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        print(net['anycast4'].cmd('sysctl net.ipv6.conf.all.hop_limit=255'))
-        # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for EQUINIX
-        print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for EQUINIX")
-        print(net['syd_eq'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::1", 2, EQ_PW, 1, 4)))
-        print(net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::2", 2, EQ_PW, 1, 4)))
-        print(net['sin_eq'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::1", 2, EQ_PW, 1, 4)))
-        print(net['sin_r5'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::2", 2, EQ_PW, 1, 4)))
-        # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for NTT
-        print(net['syd_ntt1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::1", 2, NTT_PW, 1, 4)))
-        print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for NTT")
-        print(net['syd_bb1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::2", 2, NTT_PW, 1, 4)))
-        print(net['syd_ntt2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::1", 2, NTT_PW, 1, 4)))
-        print(net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::2", 2, NTT_PW, 1, 4)))
-        print(net['sin_ntt'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::1", 2, NTT_PW, 1, 4)))
-        print(net['sin_r5'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::2", 2, NTT_PW, 1, 4)))
-        # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for TELSTRA
-        print(net['sin_tel'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::1", 2, TEL_PW, 1, 4)))
-        print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for TELSTRA")
-        print(net['sin_r6'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::2", 2, TEL_PW, 1, 4)))
-        print(net['syd_tel1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::1", 2, TEL_PW, 1, 4)))
-        print(net['syd_bb1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::2", 2, TEL_PW, 1, 4)))
-        print(net['syd_tel2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::1", 2, TEL_PW, 1, 4)))
-        print(net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::2", 2, TEL_PW, 1, 4)))
+        net['lax'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['sjo'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['sin_r5'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['sin_r6'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['syd_bb1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['syd_bb2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['mrs'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['sin_tel'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['syd_tel1'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
+        net['syd_tel2'].cmd('sysctl net.ipv6.conf.all.hop_limit=255')
 
+        # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for EQUINIX
+        print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for EQUINIX....")
+        net['syd_eq'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::1", 2, EQ_PW, 1, 4))
+        net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::2", 2, EQ_PW, 1, 4))
+        net['sin_eq'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::1", 2, EQ_PW, 1, 4))
+        net['sin_r5'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::2", 2, EQ_PW, 1, 4))
+
+        # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for NTT
+        net['syd_ntt1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::1", 2, NTT_PW, 1, 4))
+        print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for NTT....")
+        net['syd_bb1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::2", 2, NTT_PW, 1, 4))
+        net['syd_ntt2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::1", 2, NTT_PW, 1, 4))
+        net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::2", 2, NTT_PW, 1, 4))
+        net['sin_ntt'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::1", 2, NTT_PW, 1, 4))
+        net['sin_r5'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::2", 2, NTT_PW, 1, 4))
+
+        # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for TELSTRA
+        net['sin_tel'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::1", 2, TEL_PW, 1, 4))
+        print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for TELSTRA....")
+        net['sin_r6'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::2", 2, TEL_PW, 1, 4))
+        net['syd_tel1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::1", 2, TEL_PW, 1, 4))
+        net['syd_bb1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::2", 2, TEL_PW, 1, 4))
+        net['syd_tel2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::1", 2, TEL_PW, 1, 4))
+        net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::2", 2, TEL_PW, 1, 4))
+
+        print("Configuring Communities....")
+        net['sin_r5'].cmd('python3 sin_r5_FRRoutingCMD.py')
+        net['sin_r6'].cmd('python3 sin_r6_FRRoutingCMD.py')
+        net['syd_bb1'].cmd('python3 syd_bb1_FRRoutingCMD.py')
+        net['syd_bb2'].cmd('python3 syd_bb2_FRRoutingCMD.py')
+        net['sin_r3'].cmd('python3 sin_r3_FRRoutingCMD.py')
+        net['sin_r2'].cmd('python3 sin_r2_FRRoutingCMD.py')
+        net['sin_r1'].cmd('python3 sin_r1_FRRoutingCMD.py')
+        net['syd_r3'].cmd('python3 syd_r3_FRRoutingCMD.py')
+        net['mrs'].cmd('python3 mrs_FRRoutingCMD.py')
+        net['sjo'].cmd('python3 sjo_FRRoutingCMD.py')
+        net['lax'].cmd('python3 lax_FRRoutingCMD.py')
+        print(' Starting the Firewall....')
+        print('ALL DONE.')
+        print('IMPORTANT NOTE, the Pingall Command will not Reach 100% because of the Firewall and the Design of our Network')
 
         IPCLI(net)
     finally:
