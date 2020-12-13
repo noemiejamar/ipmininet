@@ -9,55 +9,65 @@ bgp_FRRouting.sendline('configure terminal')
 bgp_FRRouting.sendline('debug bgp neighbor-events')
 bgp_FRRouting.sendline('router bgp')
 
-Peer_NTT = 'BABE:8:33::2'
+sin_r1 = 'BABE:2:8::2'
+clinet2 = 'BABE:8:97:1::1'
+client2b = 'BABE:8:97:2::1'
+Peer_NTT = 'BABE:8:33::1'
 Provider_TELSTRA = 'BABE:8:49::2'
-CLIENT2 = 'BABE:8:97:1::2'
-CLIENT2b = 'BABE:8:97:2::2'
-ANYCAST3 = 'BABE:8:99::2'
-
-
+anycast3 = 'BABE:8:99::1'
 
 # Route-maps
 
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + Peer_NTT + ' route-map rm' + str(0) + '-in-ipv6 in')
-bgp_FRRouting.sendline('neighbor ' + Peer_NTT + '  route-map rm' + str(0) + '-out-ipv6 out')
+bgp_FRRouting.sendline('neighbor ' + sin_r1 + ' route-map rm' + str(0) + '-in-ipv6 in')
+bgp_FRRouting.sendline('neighbor ' + sin_r1 + '  route-map rm' + str(0) + '-out-ipv6 out')
 bgp_FRRouting.sendline('exit-address-family')
 
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + Provider_TELSTRA + ' route-map rm' + str(1) + '-in-ipv6 in')
-bgp_FRRouting.sendline('neighbor ' + Provider_TELSTRA + '  route-map rm' + str(1) + '-out-ipv6 out')
+bgp_FRRouting.sendline('neighbor ' + clinet2 + ' route-map rm' + str(1) + '-in-ipv6 in')
+bgp_FRRouting.sendline('neighbor ' + clinet2 + '  route-map rm' + str(1) + '-out-ipv6 out')
 bgp_FRRouting.sendline('exit-address-family')
 
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2 + ' route-map rm' + str(2) + '-in-ipv6 in')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2 + '  route-map rm' + str(2) + '-out-ipv6 out')
+bgp_FRRouting.sendline('neighbor ' + client2b + ' route-map rm' + str(2) + '-in-ipv6 in')
+bgp_FRRouting.sendline('neighbor ' + client2b + '  route-map rm' + str(2) + '-out-ipv6 out')
 bgp_FRRouting.sendline('exit-address-family')
 
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2b + ' route-map rm' + str(3) + '-in-ipv6 in')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2b + '  route-map rm' + str(3) + '-out-ipv6 out')
+bgp_FRRouting.sendline('neighbor ' + Peer_NTT + ' route-map rm' + str(3) + '-in-ipv6 in')
+bgp_FRRouting.sendline('neighbor ' + Peer_NTT + '  route-map rm' + str(3) + '-out-ipv6 out')
 bgp_FRRouting.sendline('exit-address-family')
 
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + ANYCAST3 + ' route-map rm' + str(4) + '-in-ipv6 in')
-bgp_FRRouting.sendline('neighbor ' + ANYCAST3 + '  route-map rm' + str(4) + '-out-ipv6 out')
+bgp_FRRouting.sendline('neighbor ' + Provider_TELSTRA + ' route-map rm' + str(4) + '-in-ipv6 in')
+bgp_FRRouting.sendline('neighbor ' + Provider_TELSTRA + '  route-map rm' + str(4) + '-out-ipv6 out')
 bgp_FRRouting.sendline('exit-address-family')
+
+bgp_FRRouting.sendline('address-family ipv6 unicast')
+bgp_FRRouting.sendline('neighbor ' + anycast3 + ' route-map rm' + str(5) + '-in-ipv6 in')
+bgp_FRRouting.sendline('neighbor ' + anycast3 + '  route-map rm' + str(5) + '-out-ipv6 out')
+bgp_FRRouting.sendline('exit-address-family')
+
 
 # only for client
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2 + ' prefix-list client2 in')  # limit the prefix accepted by client
+bgp_FRRouting.sendline('neighbor ' + clinet2 + ' prefix-list client2 in')  # limit the prefix accepted by client
 bgp_FRRouting.sendline('exit-address-family')
 
 bgp_FRRouting.sendline('address-family ipv6 unicast')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2b + ' prefix-list client2 in')  # limit the prefix accepted by client
+bgp_FRRouting.sendline('neighbor ' + client2b + ' prefix-list client2 in')  # limit the prefix accepted by client
 bgp_FRRouting.sendline('exit-address-family')
 
+
+# do not limit maximum prefix on providers
 bgp_FRRouting.sendline('address-family ipv6 unicast')
 bgp_FRRouting.sendline('neighbor ' + Peer_NTT + ' maximum-prefix 300')  # to avoid prefix flooding
 bgp_FRRouting.sendline('exit-address-family')
 
 # Security
+
+bgp_FRRouting.sendline('no neighbor ' + sin_r1 + ' ebgp-multihop')
+bgp_FRRouting.sendline('neighbor ' + sin_r1 + ' ttl-security hops 1')
 
 bgp_FRRouting.sendline('no neighbor ' + Peer_NTT + ' ebgp-multihop')
 bgp_FRRouting.sendline('neighbor ' + Peer_NTT + ' ttl-security hops 1')
@@ -65,14 +75,8 @@ bgp_FRRouting.sendline('neighbor ' + Peer_NTT + ' ttl-security hops 1')
 bgp_FRRouting.sendline('no neighbor ' + Provider_TELSTRA + ' ebgp-multihop')
 bgp_FRRouting.sendline('neighbor ' + Provider_TELSTRA + ' ttl-security hops 1')
 
-bgp_FRRouting.sendline('no neighbor ' + CLIENT2 + ' ebgp-multihop')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2 + ' ttl-security hops 1')
 
-bgp_FRRouting.sendline('no neighbor ' + CLIENT2b + ' ebgp-multihop')
-bgp_FRRouting.sendline('neighbor ' + CLIENT2b + ' ttl-security hops 1')
 
-bgp_FRRouting.sendline('no neighbor ' + ANYCAST3 + ' ebgp-multihop')
-bgp_FRRouting.sendline('neighbor ' + ANYCAST3 + ' ttl-security hops 1')
 
 bgp_FRRouting.sendline('exit')
 
