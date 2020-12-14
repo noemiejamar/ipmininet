@@ -164,8 +164,7 @@ class OVH(IPTopo):
         anycast4 = self.add_config_router('anycast4', lo_anycast_addresses,
                                           family4=AF_INET(networks=(family4_anycast,), ),
                                           family6=AF_INET6(networks=(family6_anycast,), ))
-                                
-        
+
         # -----------------------------------------------------------------------------------------------------
         # Add Links
         # -----------------------------------------------------------------------------------------------------
@@ -445,7 +444,6 @@ class OVH(IPTopo):
         self.addSubnet((client2, client_h2), subnets=('139.1.14.28/30', 'BABE:1:0020:2::8/126'))
         self.addSubnet((client3, client_h3), subnets=('139.1.13.32/30', 'BABE:1:0020:3::10/126'))
 
-       
         # In the same AS
         self.addAS(16276,
                    routers=(
@@ -453,10 +451,14 @@ class OVH(IPTopo):
                        mrs, sjo, lax, anycast1, anycast2, anycast3, anycast4))
 
         # RR iBGP sessions
-        set_rr(self, rr=sin_r3, peers=[syd_r3, syd_r4, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
-        set_rr(self, rr=sin_r4, peers=[syd_r3, syd_r4, sin_r3, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
-        set_rr(self, rr=syd_r3, peers=[sin_r3, sin_r4, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
-        set_rr(self, rr=syd_r4, peers=[sin_r3, sin_r4, syd_r3, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
+        set_rr(self, rr=sin_r3,
+               peers=[syd_r3, syd_r4, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
+        set_rr(self, rr=sin_r4,
+               peers=[syd_r3, syd_r4, sin_r3, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
+        set_rr(self, rr=syd_r3,
+               peers=[sin_r3, sin_r4, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
+        set_rr(self, rr=syd_r4,
+               peers=[sin_r3, sin_r4, syd_r3, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
 
         self.addiBGPFullMesh(1616, (syd_eq, sin_eq))
 
@@ -489,7 +491,6 @@ class OVH(IPTopo):
         ebgp_session(self, client2b, syd_bb1)
         ebgp_session(self, client3b, syd_bb2)
 
-
         # Send communities from neighbors
 
         all_al = AccessList('all', ('any',))
@@ -515,7 +516,6 @@ class OVH(IPTopo):
         # Client3 customer backup link
         client3b.get_config(BGP).set_community('16276:115', to_peer=syd_bb2, matching=(all_al,))
 
-
         # set MED for providers/peer that have several eBGP connection to OVH to differentiate them:
         # favor traffic with higher MED
         # equinix
@@ -529,8 +529,6 @@ class OVH(IPTopo):
         sin_tel.get_config(BGP).set_med(1, to_peer=sin_r6)
         syd_tel1.get_config(BGP).set_med(4, to_peer=syd_bb1)
         syd_tel2.get_config(BGP).set_med(1, to_peer=syd_bb2)
-
-
 
         # firewall table
         syd_bb1.addDaemon(IP6Tables, rules=ip6_rules)
@@ -547,7 +545,6 @@ class OVH(IPTopo):
         server = self.addHost("server")
         self.addLink(sin_r1, server)
 
-        
         records = [
             ARecord(server, server4_addr, ttl=120),
             AAAARecord(server, server6_addr, ttl=120)
@@ -567,7 +564,6 @@ class OVH(IPTopo):
         self.addDNSZone(name=reverse_domain_name_v6, dns_master=anycast3,
                         dns_slaves=[anycast1, anycast2, anycast4], records=ptr_records,
                         ns_domain_name=domain, retry_time=8200)
-        
 
         super().build(*args, **kwargs)
 
@@ -610,32 +606,48 @@ if __name__ == '__main__':
 
         # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for EQUINIX
         print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for EQUINIX....")
-        net['syd_eq'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::1", 2, EQ_PW, 1, 4))
-        net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::2", 2, EQ_PW, 1, 4))
-        net['sin_eq'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::1", 2, EQ_PW, 1, 4))
-        net['sin_r5'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::2", 2, EQ_PW, 1, 4))
+        net['syd_eq'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::1", 2, EQ_PW, 1, 4))
+        net['syd_bb2'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:17::2", 2, EQ_PW, 1, 4))
+        net['sin_eq'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::1", 2, EQ_PW, 1, 4))
+        net['sin_r5'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:16::2", 2, EQ_PW, 1, 4))
 
         # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for NTT
-        net['syd_ntt1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::1", 2, NTT_PW, 1, 4))
+        net['syd_ntt1'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::1", 2, NTT_PW, 1, 4))
         print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for NTT....")
-        net['syd_bb1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::2", 2, NTT_PW, 1, 4))
-        net['syd_ntt2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::1", 2, NTT_PW, 1, 4))
-        net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::2", 2, NTT_PW, 1, 4))
-        net['sin_ntt'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::1", 2, NTT_PW, 1, 4))
-        net['sin_r5'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::2", 2, NTT_PW, 1, 4))
+        net['syd_bb1'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:33::2", 2, NTT_PW, 1, 4))
+        net['syd_ntt2'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::1", 2, NTT_PW, 1, 4))
+        net['syd_bb2'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:34::2", 2, NTT_PW, 1, 4))
+        net['sin_ntt'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::1", 2, NTT_PW, 1, 4))
+        net['sin_r5'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:4:32::2", 2, NTT_PW, 1, 4))
 
         # Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for TELSTRA
-        net['sin_tel'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::1", 2, TEL_PW, 1, 4))
+        net['sin_tel'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::1", 2, TEL_PW, 1, 4))
         print("Configuring TTL, BGP's PASSWORD, TIMEOUT and KEEPALIVE for TELSTRA....")
-        net['sin_r6'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::2", 2, TEL_PW, 1, 4))
-        net['syd_tel1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::1", 2, TEL_PW, 1, 4))
-        net['syd_bb1'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::2", 2, TEL_PW, 1, 4))
-        net['syd_tel2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::1", 2, TEL_PW, 1, 4))
-        net['syd_bb2'].cmd('python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::2", 2, TEL_PW, 1, 4))
+        net['sin_r6'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:5:48::2", 2, TEL_PW, 1, 4))
+        net['syd_tel1'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::1", 2, TEL_PW, 1, 4))
+        net['syd_bb1'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:8:49::2", 2, TEL_PW, 1, 4))
+        net['syd_tel2'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::1", 2, TEL_PW, 1, 4))
+        net['syd_bb2'].cmd(
+            'python3 TIMEOUT_KALIVE_TTL_PASSWORD.py {} {} {} {} {}'.format("BABE:9:50::2", 2, TEL_PW, 1, 4))
 
-        print("Configuring Communities....")
+        print("Configuring Communities, Please Wait....")
         net['sin_r5'].cmd('python3 sin_r5_FRRoutingCMD.py')
-        net['sin_r6'].cmd('python3 sin_r6_FRRoutingCMD.py')
+        net['sin_r6'].cmd('sin_r6_FRRoutingCMD.py')
         net['syd_bb1'].cmd('python3 syd_bb1_FRRoutingCMD.py')
         net['syd_bb2'].cmd('python3 syd_bb2_FRRoutingCMD.py')
         net['sin_r3'].cmd('python3 sin_r3_FRRoutingCMD.py')
@@ -647,7 +659,8 @@ if __name__ == '__main__':
         net['lax'].cmd('python3 lax_FRRoutingCMD.py')
         print(' Starting the Firewall....')
         print('ALL DONE.')
-        print('IMPORTANT NOTE, the Pingall Command will not Reach 100% because of the Firewall and the Design of our Network')
+        print(
+            'IMPORTANT NOTE, the Pingall Command will not Reach 100% because of the Firewall and the Design of our Network')
 
         IPCLI(net)
     finally:
