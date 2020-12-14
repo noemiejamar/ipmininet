@@ -1,3 +1,4 @@
+
 import pexpect
 import sys
 
@@ -25,7 +26,7 @@ bgp_FRRouting.sendline('exit')
 
 # Filter regions
 
-bgp_FRRouting.sendline('bgp community-list standard FILTER-NA-ipv6 deny 16276:1503')
+bgp_FRRouting.sendline('bgp community-list standard FILTER-NA-ipv6 deny 16276:153')
 bgp_FRRouting.sendline('bgp community-list standard FILTER-NA-ipv6 permit internet')
 
 bgp_FRRouting.sendline('route-map rm0-in-ipv6 permit 10')
