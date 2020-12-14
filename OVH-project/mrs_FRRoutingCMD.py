@@ -27,7 +27,7 @@ bgp_FRRouting.sendline('exit')
 
 # Filter regions
 
-bgp_FRRouting.sendline('bgp community-list standard FILTER-EU-ipv6 deny 16276:1502')
+bgp_FRRouting.sendline('bgp community-list standard FILTER-EU-ipv6 deny 16276:152')
 bgp_FRRouting.sendline('bgp community-list standard FILTER-EU-ipv6 permit internet')
 
 bgp_FRRouting.sendline('route-map rm0-in-ipv6 permit 10')
