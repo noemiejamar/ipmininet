@@ -10,6 +10,8 @@ from ipmininet.router.config.iptables import *
 import hashlib
 from firewall import ip6_rules
 from ipmininet.router.config.zebra import AccessList
+from ipmininet.host.config import Named, ARecord, PTRRecord, AAAARecord
+from ipaddress import ip_address
 
 
 # OSPF Security
@@ -144,10 +146,26 @@ class OVH(IPTopo):
         # -----------------------------------------------------------------------------------------------------
         # anycast Routers  BABE:1:00YM: =  Y = 3 -> for anycast / 139.1.10
         # -----------------------------------------------------------------------------------------------------
-        anycast1 = self.addRouter("anycast1", config=RouterConfig, lo_addresses=["BABE:1:0030::0/64", "193.1.10.0/32"])
-        anycast2 = self.addRouter("anycast2", config=RouterConfig, lo_addresses=["BABE:1:0030::0/64", "193.1.10.0/32"])
-        anycast3 = self.addRouter("anycast3", config=RouterConfig, lo_addresses=["BABE:1:0030::0/64", "193.1.10.0/32"])
-        anycast4 = self.addRouter("anycast4", config=RouterConfig, lo_addresses=["BABE:1:0030::0/64", "193.1.10.0/32"])
+        lo4_anycast = "193.1.10.0/32"
+        lo6_anycast = "BABE:1:0030::0/128"
+        lo_anycast_addresses = (lo6_anycast, lo4_anycast)
+        family4_anycast = "193.1.10.0/24"
+        family6_anycast = "BABE:1:0030::0/64"
+
+        anycast1 = self.add_config_router('anycast1', lo_anycast_addresses,
+                                          family4=AF_INET(networks=(family4_anycast,), ),
+                                          family6=AF_INET6(networks=(family6_anycast,), ))
+        anycast2 = self.add_config_router('anycast2', lo_anycast_addresses,
+                                          family4=AF_INET(networks=(family4_anycast,), ),
+                                          family6=AF_INET6(networks=(family6_anycast,), ))
+        anycast3 = self.add_config_router('anycast3', lo_anycast_addresses,
+                                          family4=AF_INET(networks=(family4_anycast,), ),
+                                          family6=AF_INET6(networks=(family6_anycast,), ))
+        anycast4 = self.add_config_router('anycast4', lo_anycast_addresses,
+                                          family4=AF_INET(networks=(family4_anycast,), ),
+                                          family6=AF_INET6(networks=(family6_anycast,), ))
+                                
+        
         # -----------------------------------------------------------------------------------------------------
         # Add Links
         # -----------------------------------------------------------------------------------------------------
@@ -427,29 +445,18 @@ class OVH(IPTopo):
         self.addSubnet((client2, client_h2), subnets=('139.1.14.28/30', 'BABE:1:0020:2::8/126'))
         self.addSubnet((client3, client_h3), subnets=('139.1.13.32/30', 'BABE:1:0020:3::10/126'))
 
-        # Add BGP
-        anycast1.addDaemon(BGP, address_families=(
-            AF_INET6(networks=("BABE:1:0030::0/64",)), AF_INET(networks=('193.1.10.0/24',))))
-        anycast2.addDaemon(BGP, address_families=(
-            AF_INET6(networks=("BABE:1:0030::0/64",)), AF_INET(networks=('193.1.10.0/24',))))
-        anycast3.addDaemon(BGP, address_families=(
-            AF_INET6(networks=("BABE:1:0030::0/64",)), AF_INET(networks=('193.1.10.0/24',))))
-        anycast4.addDaemon(BGP, address_families=(
-            AF_INET6(networks=("BABE:1:0030::0/64",)), AF_INET(networks=('193.1.10.0/24',))))
-
+       
         # In the same AS
         self.addAS(16276,
                    routers=(
                        sin_r3, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, syd_r3, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6,
-                       mrs, sjo, lax))
-
-        self.addAS(12345, (anycast1,anycast2,anycast3,anycast4))
+                       mrs, sjo, lax, anycast1, anycast2, anycast3, anycast4))
 
         # RR iBGP sessions
-        set_rr(self, rr=sin_r3, peers=[syd_r3, syd_r4, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo])
-        set_rr(self, rr=sin_r4, peers=[syd_r3, syd_r4, sin_r3, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo])
-        set_rr(self, rr=syd_r3, peers=[sin_r3, sin_r4, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6, lax])
-        set_rr(self, rr=syd_r4, peers=[sin_r3, sin_r4, syd_r3, syd_bb1, syd_bb2, syd_r5, syd_r6, lax])
+        set_rr(self, rr=sin_r3, peers=[syd_r3, syd_r4, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
+        set_rr(self, rr=sin_r4, peers=[syd_r3, syd_r4, sin_r3, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
+        set_rr(self, rr=syd_r3, peers=[sin_r3, sin_r4, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
+        set_rr(self, rr=syd_r4, peers=[sin_r3, sin_r4, syd_r3, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
 
         self.addiBGPFullMesh(1616, (syd_eq, sin_eq))
 
@@ -461,12 +468,6 @@ class OVH(IPTopo):
         self.addiBGPFullMesh(3, (client3, client3b))
 
         # eBGP sessions
-
-        # eBGP anycast
-        ebgp_session(self, anycast1, sin_r5)
-        ebgp_session(self, anycast2, sin_r6)
-        ebgp_session(self, anycast3, syd_bb1)
-        ebgp_session(self, anycast4, syd_bb2)
 
         # Share cost sessions
         ebgp_session(self, sin_r5, sin_eq)
@@ -537,6 +538,37 @@ class OVH(IPTopo):
         sin_r5.addDaemon(IP6Tables, rules=ip6_rules)
         sin_r6.addDaemon(IP6Tables, rules=ip6_rules)
 
+        # Declare a new DNS Zone
+
+        server4_addr = "10.11.12.13"
+        server6_addr = "cafe::"
+        domain = "ovh.com"
+
+        server = self.addHost("server")
+        self.addLink(sin_r1, server)
+
+        
+        records = [
+            ARecord(server, server4_addr, ttl=120),
+            AAAARecord(server, server6_addr, ttl=120)
+        ]
+        self.addDNSZone(name=domain, dns_master=anycast3,
+                        dns_slaves=[anycast1, anycast2, anycast4], nodes=[server], records=records)
+
+        ptr_records = [
+            PTRRecord(server4_addr, server + f".{domain}", ttl=120),
+            PTRRecord(server6_addr, server + f".{domain}", ttl=120)
+        ]
+        reverse_domain_name_v4 = ip_address(server4_addr).reverse_pointer[-10:]
+        reverse_domain_name_v6 = ip_address(server6_addr).reverse_pointer[-10:]
+        self.addDNSZone(name=reverse_domain_name_v4, dns_master=anycast3,
+                        dns_slaves=[anycast1, anycast2, anycast4], records=ptr_records,
+                        ns_domain_name=domain, retry_time=8200)
+        self.addDNSZone(name=reverse_domain_name_v6, dns_master=anycast3,
+                        dns_slaves=[anycast1, anycast2, anycast4], records=ptr_records,
+                        ns_domain_name=domain, retry_time=8200)
+        
+
         super().build(*args, **kwargs)
 
     # Returns a router with ospf, ospf6 and bgp configuration
@@ -547,6 +579,8 @@ class OVH(IPTopo):
         r.addDaemon(OSPF6)
         # add BGP
         r.addDaemon(BGP, address_families=(family4, family6))
+        # add Named for DNS
+        r.addDaemon(Named)
         return r
 
         # delay
