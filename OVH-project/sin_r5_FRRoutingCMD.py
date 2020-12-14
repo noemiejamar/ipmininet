@@ -63,53 +63,53 @@ bgp_FRRouting.sendline('ipv6 access-list all permit any')
 
 bgp_FRRouting.sendline('route-map rm0-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
-bgp_FRRouting.sendline('set community 16276:800')
+bgp_FRRouting.sendline('set community 16276:80')
 bgp_FRRouting.sendline('set local-preference 101')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm1-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
-bgp_FRRouting.sendline('set community 16276:800')
+bgp_FRRouting.sendline('set community 16276:80')
 bgp_FRRouting.sendline('set local-preference 101')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm2-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
-bgp_FRRouting.sendline('set community 16276:802')
+bgp_FRRouting.sendline('set community 16276:82')
 bgp_FRRouting.sendline('set local-preference 100')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm3-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
-bgp_FRRouting.sendline('set community 16276:802')
+bgp_FRRouting.sendline('set community 16276:82')
 bgp_FRRouting.sendline('set local-preference 100')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm4-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
 bgp_FRRouting.sendline('match as-path client1')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('set local-preference 111')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm5-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
 bgp_FRRouting.sendline('match as-path client1')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('set local-preference 111')
 bgp_FRRouting.sendline('exit')
 
 # anycast
 bgp_FRRouting.sendline('route-map rm6-in-ipv6 permit 100')
 bgp_FRRouting.sendline('match ipv6 address all')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('set local-preference 111')
 bgp_FRRouting.sendline('exit')
 
 # Advertise only clients prefixes to peers and providers
 
-bgp_FRRouting.sendline('bgp community-list standard FILTER-ipv6 deny 16276:800')  # peer
-bgp_FRRouting.sendline('bgp community-list standard FILTER-ipv6 deny 16276:802')  # provider
+bgp_FRRouting.sendline('bgp community-list standard FILTER-ipv6 deny 16276:80')  # peer
+bgp_FRRouting.sendline('bgp community-list standard FILTER-ipv6 deny 16276:82')  # provider
 bgp_FRRouting.sendline('bgp community-list standard FILTER-ipv6 permit internet')
 bgp_FRRouting.sendline('bgp community-list standard NOFILTER-ipv6 permit internet')
 
@@ -151,53 +151,53 @@ bgp_FRRouting.sendline('bgp community-list standard CUSTOMER permit 16276:120')
 bgp_FRRouting.sendline('route-map rm0-in-ipv6 permit 20')
 bgp_FRRouting.sendline('match community PEER_BACKUP')
 bgp_FRRouting.sendline('set local-preference 105')
-bgp_FRRouting.sendline('set community 16276:800')
+bgp_FRRouting.sendline('set community 16276:80')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm0-in-ipv6 permit 30')
 bgp_FRRouting.sendline('match community PEER')
 bgp_FRRouting.sendline('set local-preference 110')
-bgp_FRRouting.sendline('set community 16276:800')
+bgp_FRRouting.sendline('set community 16276:80')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm1-in-ipv6 permit 20')
 bgp_FRRouting.sendline('match community PEER_BACKUP')
 bgp_FRRouting.sendline('set local-preference 105')
-bgp_FRRouting.sendline('set community 16276:800')
+bgp_FRRouting.sendline('set community 16276:80')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm1-in-ipv6 permit 30')
 bgp_FRRouting.sendline('match community PEER')
 bgp_FRRouting.sendline('set local-preference 110')
-bgp_FRRouting.sendline('set community 16276:800')
+bgp_FRRouting.sendline('set community 16276:80')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm4-in-ipv6 permit 20')
 bgp_FRRouting.sendline('match community CUSTOMER_BACKUP')
 bgp_FRRouting.sendline('match as-path client1')
 bgp_FRRouting.sendline('set local-preference 115')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm4-in-ipv6 permit 30')
 bgp_FRRouting.sendline('match community CUSTOMER')
 bgp_FRRouting.sendline('match as-path client1')
 bgp_FRRouting.sendline('set local-preference 120')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm5-in-ipv6 permit 20')
 bgp_FRRouting.sendline('match community CUSTOMER_BACKUP')
 bgp_FRRouting.sendline('match as-path client1')
 bgp_FRRouting.sendline('set local-preference 115')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('exit')
 
 bgp_FRRouting.sendline('route-map rm5-in-ipv6 permit 30')
 bgp_FRRouting.sendline('match community CUSTOMER')
 bgp_FRRouting.sendline('match as-path client1')
 bgp_FRRouting.sendline('set local-preference 120')
-bgp_FRRouting.sendline('set community 16276:801')
+bgp_FRRouting.sendline('set community 16276:81')
 bgp_FRRouting.sendline('exit')
 
 # Blackhole
