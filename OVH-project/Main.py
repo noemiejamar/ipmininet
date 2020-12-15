@@ -125,23 +125,23 @@ class OVH(IPTopo):
         # -----------------------------------------------------------------------------------------------------
         # Customers Routers  BABE:1:00YM:x+1 =  Y = 2 -> for customers / 139.x+1.15
         # -----------------------------------------------------------------------------------------------------
-        client1 = self.add_config_router('client1', ["BABE:1:0020:1::0/128", "139.1.15.0/32"],
-                                         family4=AF_INET(networks=('139.1.15.0/24',), ),
+        client1 = self.add_config_router('client1', ["BABE:1:0020:1::0/128", "139.91.15.0/32"],
+                                         family4=AF_INET(networks=('139.91.15.0/24',), ),
                                          family6=AF_INET6(networks=('BABE:1:0020:1::0/64', 'BABE:1f01::0/64',), ))
-        client1b = self.add_config_router('client1b', ["BABE:1:0020:1::1/128", "139.1.15.1/32"],
-                                          family4=AF_INET(networks=('139.1.15.0/24',), ),
+        client1b = self.add_config_router('client1b', ["BABE:1:0020:1::1/128", "139.91.15.1/32"],
+                                          family4=AF_INET(networks=('139.91.15.0/24',), ),
                                           family6=AF_INET6(networks=('BABE:1:0020:1::0/64', 'BABE:1f01::0/64',), ))
-        client2 = self.add_config_router('client2', ["BABE:1:0020:2::0/128", "139.2.14.0/32"],
-                                         family4=AF_INET(networks=('139.1.14.0/24',), ),
+        client2 = self.add_config_router('client2', ["BABE:1:0020:2::0/128", "139.92.14.0/32"],
+                                         family4=AF_INET(networks=('139.91.14.0/24',), ),
                                          family6=AF_INET6(networks=('BABE:1:0020:2::0/64',), ))
-        client2b = self.add_config_router('client2b', ["BABE:1:0020:2::1/128", "139.1.14.1/32"],
-                                          family4=AF_INET(networks=('139.1.14.0/24',), ),
+        client2b = self.add_config_router('client2b', ["BABE:1:0020:2::1/128", "139.91.14.1/32"],
+                                          family4=AF_INET(networks=('139.91.14.0/24',), ),
                                           family6=AF_INET6(networks=('BABE:1:0020:2::0/64',), ))
-        client3 = self.add_config_router('client3', ["BABE:1:0020:3::0/128", "139.1.13.0/32"],
-                                         family4=AF_INET(networks=('139.3.15.0/24',), ),
+        client3 = self.add_config_router('client3', ["BABE:1:0020:3::0/128", "139.91.13.0/32"],
+                                         family4=AF_INET(networks=('139.93.15.0/24',), ),
                                          family6=AF_INET6(networks=('BABE:1:0020:3::0/64',), ))
-        client3b = self.add_config_router('client3b', ["BABE:1:0020:3::1/128", "139.3.13.1/32"],
-                                          family4=AF_INET(networks=('139.1.13.0/24',), ),
+        client3b = self.add_config_router('client3b', ["BABE:1:0020:3::1/128", "139.93.13.1/32"],
+                                          family4=AF_INET(networks=('139.91.13.0/24',), ),
                                           family6=AF_INET6(networks=('BABE:1:0020:3::0/64',), ))
         # -----------------------------------------------------------------------------------------------------
         # anycast Routers  BABE:1:00YM: =  Y = 3 -> for anycast / 139.1.10
@@ -451,14 +451,15 @@ class OVH(IPTopo):
                        mrs, sjo, lax, anycast1, anycast2, anycast3, anycast4))
 
         # RR iBGP sessions
-        set_rr(self, rr=sin_r3,
-               peers=[syd_r3, syd_r4, sin_r4, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
-        set_rr(self, rr=sin_r4,
-               peers=[syd_r3, syd_r4, sin_r3, sin_r1, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
-        set_rr(self, rr=syd_r3,
-               peers=[sin_r3, sin_r4, syd_r4, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
+        set_rr(self, rr=sin_r1,
+               peers=[syd_r3, syd_r4, sin_r4, sin_r3, sin_r2, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
+        set_rr(self, rr=sin_r2,
+               peers=[syd_r3, syd_r4, sin_r3, sin_r1, sin_r4, sin_r5, sin_r6, mrs, sjo, anycast1, anycast2])
+        set_rr(self, rr=syd_r5,
+               peers=[sin_r3, sin_r4, syd_r4, syd_bb1, syd_bb2, syd_r3, syd_r6, lax, anycast3, anycast4])
         set_rr(self, rr=syd_r4,
                peers=[sin_r3, sin_r4, syd_r3, syd_bb1, syd_bb2, syd_r5, syd_r6, lax, anycast3, anycast4])
+
 
         self.addiBGPFullMesh(1616, (syd_eq, sin_eq))
 
